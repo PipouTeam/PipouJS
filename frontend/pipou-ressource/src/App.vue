@@ -1,8 +1,10 @@
 <template>
   <v-app>
     <app-bar></app-bar>
-    <v-main class="pa-0">
-      <router-view />
+    <v-main  class="py-0">
+      <v-container class="px-lg-15">
+        <router-view />
+      </v-container>
     </v-main>
   </v-app>
 </template>
