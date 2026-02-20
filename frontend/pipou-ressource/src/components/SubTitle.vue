@@ -1,9 +1,9 @@
 <template>
-      <div class="my-3">
+  <v-container>
         <h1 class="text-h5 text-black my-0">
           {{ message }}
         </h1>
-      </div>
+  </v-container>
 </template>
 
 <script setup>

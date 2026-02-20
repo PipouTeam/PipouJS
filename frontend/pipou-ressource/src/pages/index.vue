@@ -1,6 +1,8 @@
 <template>
-  <Title :message=pageTitle />
-  <SubTitle :message="pageSubtitle"/>
+  <v-container>
+    <Title :message=pageTitle />
+    <SubTitle :message="pageSubtitle"/>
+  </v-container>
 </template>
 
 <script setup>
