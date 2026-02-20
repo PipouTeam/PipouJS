@@ -13,10 +13,13 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
-    HelloWorld: typeof import('./src/components/MonComponent.vue')['default']
-    MonComponent: typeof import('./src/components/MonComponent.vue')['default']
+    copy: typeof import('./src/components/Title copy.vue')['default']
+    HelloWorld: typeof import('./src/components/Title.vue')['default']
+    MonComponent: typeof import('./src/components/Title.vue')['default']
     PageAccueil: typeof import('./src/components/HelloWorld.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SubTitle: typeof import('./src/components/SubTitle.vue')['default']
+    Title: typeof import('./src/components/Title.vue')['default']
   }
 }
