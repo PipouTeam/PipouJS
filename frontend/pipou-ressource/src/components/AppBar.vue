@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar flex-column height="auto" flat class="border-b">
+  <v-app-bar flex-column :height="$vuetify.display.mdAndUp ? 160 : 80" flat class="border-b">
     <v-container fluid class="pa-0">
       <v-row no-gutters class="d-flex align-center justify-space-between justify-lg-space-around px-lg-15 py-0 my-0">
         
