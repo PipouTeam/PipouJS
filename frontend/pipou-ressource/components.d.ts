@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    ArticleContent: typeof import('./src/components/ArticleContent.vue')['default']
     ArticleHeader: typeof import('./src/components/ArticleHeader.vue')['default']
     copy: typeof import('./src/components/Title copy.vue')['default']
     HelloWorld: typeof import('./src/components/Title.vue')['default']

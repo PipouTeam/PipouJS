@@ -1,5 +1,6 @@
 <template>
   <ArticleHeader />
+  <ArticleContent/>
 </template>
 
 <script setup>
