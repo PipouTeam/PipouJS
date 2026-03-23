@@ -14,6 +14,8 @@ declare module 'vue' {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     CatalogueCard: typeof import('./src/components/CatalogueCard.vue')['default']
+    ArticleContent: typeof import('./src/components/ArticleContent.vue')['default']
+    ArticleHeader: typeof import('./src/components/ArticleHeader.vue')['default']
     copy: typeof import('./src/components/Title copy.vue')['default']
     HelloWorld: typeof import('./src/components/Title.vue')['default']
     MonComponent: typeof import('./src/components/Title.vue')['default']

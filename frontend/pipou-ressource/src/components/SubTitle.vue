@@ -1,9 +1,7 @@
 <template>
-  <v-container>
-        <h1 class="text-h5 text-black my-0">
+        <h1 class="text-h5 text-black my-0  mt-2">
           {{ message }}
         </h1>
-  </v-container>
 </template>
 
 <script setup>
