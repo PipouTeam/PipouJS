@@ -1,20 +1,14 @@
-// TODO collègue : Module Commentaires (E01-E04)
+// Module Commentaires (E01-E04)
 // Table utilisée : comments (id, resource_id, user_id, parent_id, content, is_hidden)
 //
 // Endpoints à implémenter :
-//   GET    /api/resources/:id/comments           → E01 : liste des commentaires (public, avec réponses)
-//   POST   /api/resources/:id/comments           → E01 : poster un commentaire (JWT requis)
-//   POST   /api/resources/:id/comments/:cid/reply → E02 : répondre à un commentaire (parent_id = cid)
-//   DELETE /api/comments/:id                     → E03 : supprimer son commentaire (ou moderator+)
+//   GET    /api/resources/:id/comments              → E01 : liste des commentaires (public, avec réponses)
+//   POST   /api/resources/:id/comments              → E01 : poster un commentaire (JWT requis)
+//   POST   /api/resources/:id/comments/:cid/reply   → E02 : répondre à un commentaire (parent_id = cid)
+//   DELETE /api/comments/:id                        → E03 : supprimer son commentaire (ou moderator+)
 //
 // Modération :
-//   DELETE /api/moderation/comments/:id          → M04 : masquer/supprimer (moderator+)
-//
-// Conseil : récupérer les commentaires racines (parent_id IS NULL) + leurs réponses en une requête
-//   SELECT c.*, u.first_name, u.last_name FROM comments c
-//   JOIN users u ON c.user_id = u.id
-//   WHERE c.resource_id = $1 AND c.is_hidden = FALSE
-//   ORDER BY c.created_at ASC
+//   DELETE /api/moderation/comments/:id             → M04 : masquer/supprimer (moderator+)
 
 module.exports = {
     async list(req, res) {
