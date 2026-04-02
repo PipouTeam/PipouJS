@@ -18,6 +18,7 @@ const logger = require('./util/logger');
 
 require('mandatoryenv').load([
     'DB_HOST',
+    'DB_PORT',
     'DB_DATABASE',
     'DB_USER',
     'DB_PASSWORD',

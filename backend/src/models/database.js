@@ -1,18 +1,11 @@
+const { Pool } = require('pg');
 
-const {
-    DB_HOST,
-    DB_DATABASE,
-    DB_USER,
-    DB_PASSWORD
-} = process.env;
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_DATABASE,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+});
 
-
-
-const mysqlm = require('mysqlm');
-
-module.exports = mysqlm.connect({
-    host: DB_HOST,
-    database: DB_DATABASE,
-    user: DB_USER,
-    password: DB_PASSWORD
-})
+module.exports = pool;
