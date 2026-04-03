@@ -59,6 +59,7 @@ export default defineConfig({
       'unplugin-vue-router/data-loaders/basic',
     ],
   },
+  assetsInclude: ['**/*.pdf'],
   define: { 'process.env': {} },
   resolve: {
     alias: {
