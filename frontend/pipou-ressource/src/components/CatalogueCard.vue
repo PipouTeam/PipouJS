@@ -43,6 +43,7 @@
           color="#00008B"
           size="large"
           class="font-weight-bold"
+          to="/article"
         ></v-btn>
       </div>
     </v-card-text>

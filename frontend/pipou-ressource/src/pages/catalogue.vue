@@ -30,52 +30,58 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import imgStress        from '@/assets/img/stress-1.jpg'
+import imgCommunication from '@/assets/img/communication.jpg'
+import imgLeadership    from '@/assets/img/leadership.jpg'
+import imgEcoute        from '@/assets/img/ecoute.jpg'
+import imgConflit       from '@/assets/img/conflit.jpg'
+import imgTutoring      from '@/assets/img/tutoring.jpg'
 
-const pageTitle = "Page de catalogue des ressources";
+const pageTitle = "Catalogue des ressources";
 
-// Données moquées 
+// Données moquées
 const ressources = ref([
   {
     titre: "Gérer son stress au travail",
     relation: "Professionnelle",
     text: "Apprenez les techniques de respiration et d'organisation pour mieux vivre votre quotidien.",
     categorie: "Bien-être",
-    image: "https://cataas.com/cat?1"
+    image: imgStress
   },
   {
     titre: "Communication non-violente",
     relation: "Personnelle",
     text: "Améliorez vos échanges avec vos proches grâce à la méthode CNV.",
     categorie: "Communication",
-    image: "https://cataas.com/cat?2"
+    image: imgCommunication
   },
   {
     titre: "Leadership Bienveillant",
     relation: "Professionnelle",
     text: "Comment motiver ses équipes en restant à l'écoute de leurs besoins.",
     categorie: "Management",
-    image: "https://cataas.com/cat?3"
+    image: imgLeadership
   },
   {
     titre: "L'art de l'écoute",
     relation: "Sociale",
     text: "Être présent pour l'autre sans juger, un pilier de la relation humaine.",
     categorie: "Empathie",
-    image: "https://cataas.com/cat?4"
+    image: imgEcoute
   },
   {
     titre: "Conflits de voisinage",
     relation: "Citoyenne",
     text: "Des pistes concrètes pour désamorcer les tensions du quotidien.",
     categorie: "Médiation",
-    image: "https://cataas.com/cat?5"
+    image: imgConflit
   },
   {
     titre: "Le tutorat en entreprise",
     relation: "Professionnelle",
     text: "Transmettre ses compétences efficacement aux nouveaux arrivants.",
     categorie: "Formation",
-    image: "https://cataas.com/cat?6"
+    image: imgTutoring
   }
 ]);
 

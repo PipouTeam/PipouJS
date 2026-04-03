@@ -15,19 +15,15 @@
         </div>
 
         <div class="d-flex align-center">
-          <div 
-            class="d-flex align-center cursor-pointer" 
+          <v-btn
+            color="primary"
+            :variant="isLoggedIn ? 'tonal' : 'flat'"
+            rounded="sm"
+            :prepend-icon="isLoggedIn ? 'mdi-account' : 'mdi-login'"
             @click="$router.push(authLink)"
-            style="cursor: pointer;"
-          > 
-            <h2 class="text-primary font-weight-bold mr-2 d-none d-md-flex">
-              {{ authText }}
-            </h2>
-            
-            <v-icon color="primary" :size="$vuetify.display.smAndDown ? 50 : 70">
-              {{ authIcon }}
-            </v-icon>
-          </div>
+          >
+            {{ authText }}
+          </v-btn>
 
           <v-btn
             icon="mdi-menu"
@@ -42,15 +38,15 @@
       <v-divider class="d-none d-md-flex"></v-divider>
 
       <div class="d-none d-md-flex justify-center py-0">
-        <v-tabs height="50" class="align-center">
-          <v-tab 
-            v-for="item in menuItems" 
+        <v-tabs height="50" class="align-center" :model-value="$route.path">
+          <v-tab
+            v-for="item in menuItems"
             :key="item.title"
-            :to="item.to"
-            min-height="50" 
+            :value="item.to"
+            min-height="50"
             class="text-caption text-uppercase"
             slider-color="primary"
-            exact
+            @click="$router.push(item.to)"
           >
             {{ item.title }}
           </v-tab>
@@ -81,17 +77,14 @@ const authLink = computed(() => {
   return isLoggedIn.value ? '/compte' : '/connexion'
 })
 
-const authIcon = computed(() => {
-  return isLoggedIn.value ? 'mdi-account' : 'mdi-account-outline'
-})
 
 const menuItems = [
   { title: 'Accueil', to: '/' },
   { title: 'Catalogue des Ressources', to: '/catalogue' },
   { title: 'Mon compte', to: '/compte' },
   { title: 'Mes ressources', to: '/mes-ressources' },
-  { title: 'Créer une ressources', to: '/creer' },
-  { title: 'Mention Légale', to: '/mentions' },
+  { title: 'Créer une ressource', to: '/creer' },
+  { title: 'Mentions Légales', to: '/mentions' },
   { title: 'FAQ', to: '/faq' },
   { title: 'Contact', to: '/contact' },
 ]
