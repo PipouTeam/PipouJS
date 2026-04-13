@@ -145,21 +145,21 @@ Les deux applications (web et mobile) communiquent avec **la même API**. Cela g
 
 ### 3.2 Architecture frontend
 
-Le frontend suit le principe d'une **SPA (Single Page Application)** : une seule page HTML est chargée, et la navigation entre les sections se fait sans rechargement complet du navigateur.
+Le frontend suit le principe suivant : une seule page HTML est chargée, et la navigation entre les sections se fait sans rechargement complet du navigateur.
 
 ```
 src/
-├── assets/          → Images, logos, fichiers PDF
+├── assets/          → Images, logos
 ├── components/      → Composants réutilisables (AppBar, CatalogueCard, ArticleHeader…)
 ├── pages/           → Une page = une route (catalogue.vue → /catalogue)
 │   └── article/
 │       └── [id].vue → Route dynamique (/article/1, /article/2…)
 ├── stores/          → Données globales partagées entre composants (auth.js)
 ├── services/        → Communication avec l'API (api.js)
-└── router/          → Configuration de la navigation et des gardes de route
+└── router/          → Configuration de la navigation et des routes
 ```
 
-**Gardes de route** : certaines pages (`/compte`, `/mes-ressources`, `/creer`) sont protégées. Si l'utilisateur n'est pas connecté et tente d'y accéder, il est automatiquement redirigé vers `/connexion`.
+Certaines pages (`/compte`, `/mes-ressources`, `/creer`) sont protégées. Si l'utilisateur n'est pas connecté et tente d'y accéder, il est automatiquement redirigé vers `/connexion`.
 
 ---
 
