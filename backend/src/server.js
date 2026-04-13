@@ -18,6 +18,7 @@ const logger = require('./util/logger');
 
 require('mandatoryenv').load([
     'DB_HOST',
+    'DB_PORT',
     'DB_DATABASE',
     'DB_USER',
     'DB_PASSWORD',
@@ -40,7 +41,10 @@ app.use(express.urlencoded( { extended: true, limit: '10mb' } ));
 app.use(logger.dev, logger.combined);
 
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+}));
 app.use(helmet());
 
 // This middleware adds the json header to every response

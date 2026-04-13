@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pipou_db
+      POSTGRES_USER: pipou
+      POSTGRES_PASSWORD: pipou_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: pipou_db
+      DB_USER: pipou
+      DB_PASSWORD: pipou_secret
+      PORT: 3001
+      SECRET: change_me_in_production
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
