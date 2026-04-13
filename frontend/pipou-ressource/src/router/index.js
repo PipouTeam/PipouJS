@@ -9,9 +9,20 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { routes } from 'vue-router/auto-routes'
 
+const PROTECTED_ROUTES = ['/compte', '/mes-ressources', '/creer']
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: setupLayouts(routes),
+})
+
+router.beforeEach((to) => {
+  const isProtected = PROTECTED_ROUTES.includes(to.path)
+  const isLoggedIn  = !!localStorage.getItem('token')
+
+  if (isProtected && !isLoggedIn) {
+    return { path: '/connexion' }
+  }
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

@@ -31,7 +31,7 @@
 
         <!-- Onglet Connexion -->
         <v-window-item value="connexion">
-          <v-form @submit.prevent="handleLogin">
+          <v-form ref="loginFormRef" @submit.prevent="handleLogin">
             <p class="text-body-2 text-grey-darken-2 mb-6">
               Connectez-vous pour accéder à vos ressources et à votre espace personnel.
             </p>
@@ -45,6 +45,7 @@
               density="comfortable"
               class="mb-3"
               autocomplete="email"
+              :rules="rules.email"
             />
 
             <v-text-field
@@ -57,6 +58,7 @@
               density="comfortable"
               class="mb-1"
               autocomplete="current-password"
+              :rules="rules.required"
               @click:append-inner="showPassword = !showPassword"
             />
 
@@ -66,6 +68,17 @@
               </a>
             </div>
 
+            <v-alert
+              v-if="loginError"
+              type="error"
+              variant="tonal"
+              rounded="sm"
+              density="compact"
+              class="mb-4"
+            >
+              {{ loginError }}
+            </v-alert>
+
             <v-btn
               type="submit"
               color="primary"
@@ -74,6 +87,7 @@
               size="large"
               block
               prepend-icon="mdi-login"
+              :loading="loginLoading"
             >
               Se connecter
             </v-btn>
@@ -82,7 +96,7 @@
 
         <!-- Onglet Inscription -->
         <v-window-item value="inscription">
-          <v-form @submit.prevent="handleRegister">
+          <v-form ref="registerFormRef" @submit.prevent="handleRegister">
             <p class="text-body-2 text-grey-darken-2 mb-6">
               Créez votre compte pour accéder à l'ensemble des ressources et fonctionnalités de la plateforme.
             </p>
@@ -96,6 +110,7 @@
                   variant="outlined"
                   density="comfortable"
                   autocomplete="given-name"
+                  :rules="rules.required"
                 />
               </v-col>
               <v-col cols="6">
@@ -105,6 +120,7 @@
                   variant="outlined"
                   density="comfortable"
                   autocomplete="family-name"
+                  :rules="rules.required"
                 />
               </v-col>
             </v-row>
@@ -118,6 +134,7 @@
               density="comfortable"
               class="mb-3"
               autocomplete="email"
+              :rules="rules.email"
             />
 
             <v-text-field
@@ -130,6 +147,7 @@
               density="comfortable"
               class="mb-3"
               autocomplete="new-password"
+              :rules="rules.password"
               @click:append-inner="showPassword = !showPassword"
             />
 
@@ -142,7 +160,30 @@
               density="comfortable"
               class="mb-6"
               autocomplete="new-password"
+              :rules="rules.confirmPassword"
             />
+
+            <v-alert
+              v-if="registerError"
+              type="error"
+              variant="tonal"
+              rounded="sm"
+              density="compact"
+              class="mb-4"
+            >
+              {{ registerError }}
+            </v-alert>
+
+            <v-alert
+              v-if="registerSuccess"
+              type="success"
+              variant="tonal"
+              rounded="sm"
+              density="compact"
+              class="mb-4"
+            >
+              Compte créé ! Vous pouvez maintenant vous connecter.
+            </v-alert>
 
             <v-btn
               type="submit"
@@ -152,6 +193,7 @@
               size="large"
               block
               prepend-icon="mdi-account-plus-outline"
+              :loading="registerLoading"
             >
               Créer mon compte
             </v-btn>
@@ -172,20 +214,86 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router    = useRouter()
+const authStore = useAuthStore()
 
 const activeTab    = ref('connexion')
 const showPassword = ref(false)
 
-const loginForm = ref({ email: '', password: '' })
-const registerForm = ref({
-  firstName: '', lastName: '', email: '', password: '', confirmPassword: ''
-})
+const loginFormRef    = ref(null)
+const registerFormRef = ref(null)
 
-const handleLogin = () => {
-  // TODO : appel API authentification
+const loginForm    = ref({ email: '', password: '' })
+const loginLoading = ref(false)
+const loginError   = ref('')
+
+const registerForm    = ref({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' })
+const registerLoading = ref(false)
+const registerError   = ref('')
+const registerSuccess = ref(false)
+
+// Règles de validation
+const rules = {
+  required: [
+    v => !!v?.trim() || 'Ce champ est obligatoire.',
+  ],
+  email: [
+    v => !!v?.trim()              || 'L\'adresse e-mail est obligatoire.',
+    v => /.+@.+\..+/.test(v)     || 'Format d\'adresse e-mail invalide.',
+  ],
+  password: [
+    v => !!v                      || 'Le mot de passe est obligatoire.',
+    v => v.length >= 8            || 'Le mot de passe doit contenir au moins 8 caractères.',
+  ],
+  get confirmPassword() {
+    return [
+      v => !!v                                          || 'Veuillez confirmer votre mot de passe.',
+      v => v === registerForm.value.password            || 'Les mots de passe ne correspondent pas.',
+    ]
+  },
 }
 
-const handleRegister = () => {
-  // TODO : appel API création de compte
+async function handleLogin() {
+  const { valid } = await loginFormRef.value.validate()
+  if (!valid) return
+
+  loginError.value   = ''
+  loginLoading.value = true
+  try {
+    await authStore.login(loginForm.value.email, loginForm.value.password)
+    router.push('/')
+  } catch (e) {
+    loginError.value = e.message
+  } finally {
+    loginLoading.value = false
+  }
+}
+
+async function handleRegister() {
+  const { valid } = await registerFormRef.value.validate()
+  if (!valid) return
+
+  registerError.value   = ''
+  registerSuccess.value = false
+  registerLoading.value = true
+  try {
+    await authStore.register(
+      registerForm.value.firstName,
+      registerForm.value.lastName,
+      registerForm.value.email,
+      registerForm.value.password,
+    )
+    registerSuccess.value = true
+    registerForm.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }
+    registerFormRef.value.reset()
+    setTimeout(() => { activeTab.value = 'connexion' }, 2000)
+  } catch (e) {
+    registerError.value = e.message
+  } finally {
+    registerLoading.value = false
+  }
 }
 </script>
