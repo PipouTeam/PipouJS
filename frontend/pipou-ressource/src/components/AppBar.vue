@@ -1,83 +1,121 @@
 <template>
-  <v-app-bar flex-column :height="$vuetify.display.mdAndUp ? 160 : 80" flat class="border-b">
-    <v-container fluid class="pa-0">
-      <v-row no-gutters class="d-flex align-center justify-space-between justify-lg-space-around px-lg-15 py-0 my-0">
-        
-        <div class="d-flex py-0 cursor-pointer" @click="$router.push('/')" style="cursor: pointer;">
-          <v-img 
-            src="@/assets/logo.png" 
-            :width="$vuetify.display.smAndDown ? 180 : 230"  
-            contain
-          ></v-img>
-          <h1 class="px-2 pt-4 d-none d-sm-flex text-md-h4 text-h5 font-weight-bold" style="line-height: 1.2;">
-            Ressource <br>Relationnelle
-          </h1>
-        </div>
+  <v-app-bar flat class="border-b" :height="mdAndUp ? 120 : 64">
 
-        <div class="d-flex align-center">
-          <v-btn
-            color="primary"
-            :variant="isLoggedIn ? 'tonal' : 'flat'"
-            rounded="sm"
-            :prepend-icon="isLoggedIn ? 'mdi-account' : 'mdi-login'"
-            @click="$router.push(authLink)"
+    <v-container fluid class="pa-0 h-100 d-flex flex-column justify-center">
+
+      <!-- ── Ligne 1 : logo + auth + burger ─────────────────────────────── -->
+      <div class="d-flex align-center px-4 px-lg-12" style="flex: 0 0 auto">
+
+        <!-- Logo -->
+        <div class="d-flex align-center cursor-pointer" style="cursor:pointer" @click="router.push('/')">
+          <v-img src="@/assets/logo.png" :width="mdAndUp ? 200 : 140" contain />
+          <span
+            class="d-none d-sm-block font-weight-bold ml-2 text-primary"
+            :class="mdAndUp ? 'text-h5' : 'text-body-1'"
+            style="line-height:1.25"
           >
-            {{ authText }}
-          </v-btn>
-
-          <v-btn
-            icon="mdi-menu"
-            variant="text"
-            color="primary"
-            class="d-md-none ml-2"
-            @click.stop="menuModal = true"
-          ></v-btn>
+            Ressource<br>Relationnelle
+          </span>
         </div>
-      </v-row>
 
-      <v-divider class="d-none d-md-flex"></v-divider>
+        <v-spacer />
 
-      <div class="d-none d-md-flex justify-center py-0">
-        <v-tabs height="50" class="align-center" :model-value="$route.path">
+        <!-- Bouton connexion / nom utilisateur -->
+        <v-btn
+          color="primary"
+          :variant="isLoggedIn ? 'tonal' : 'flat'"
+          rounded="sm"
+          :prepend-icon="isLoggedIn ? 'mdi-account' : 'mdi-login'"
+          :size="mdAndUp ? 'default' : 'small'"
+          @click="router.push(authLink)"
+        >
+          {{ authText }}
+        </v-btn>
+
+        <!-- Burger (mobile uniquement) -->
+        <v-btn
+          icon="mdi-menu"
+          variant="text"
+          color="primary"
+          class="d-md-none ml-2"
+          @click.stop="drawer = true"
+        />
+      </div>
+
+      <!-- ── Ligne 2 : onglets (desktop uniquement) ──────────────────────── -->
+      <template v-if="mdAndUp">
+        <v-divider class="mt-1" />
+        <v-tabs height="44" class="align-center" :model-value="route.path">
           <v-tab
             v-for="item in menuItems"
             :key="item.title"
             :value="item.to"
-            min-height="50"
+            min-height="44"
             class="text-caption text-uppercase"
             slider-color="primary"
-            @click="$router.push(item.to)"
+            @click="router.push(item.to)"
           >
             {{ item.title }}
           </v-tab>
         </v-tabs>
-      </div>
+      </template>
+
     </v-container>
   </v-app-bar>
 
-  </template>
+  <!-- ── Drawer mobile ──────────────────────────────────────────────────── -->
+  <v-navigation-drawer v-model="drawer" temporary location="right">
+    <v-list-item
+      prepend-icon="mdi-close"
+      title="Menu"
+      class="py-4"
+      @click="drawer = false"
+    />
+    <v-divider />
+    <v-list nav class="mt-2">
+      <v-list-item
+        v-for="item in menuItems"
+        :key="item.title"
+        :title="item.title"
+        :to="item.to"
+        rounded="lg"
+        @click="drawer = false"
+      />
+    </v-list>
+  </v-navigation-drawer>
+</template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/stores/auth'
 
-const authStore = useAuthStore()
-const menuModal = ref(false)
+const authStore     = useAuthStore()
+const router        = useRouter()
+const route         = useRoute()
+const { mdAndUp }   = useDisplay()
+const drawer        = ref(false)
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
+const authLink   = computed(() => isLoggedIn.value ? '/compte' : '/connexion')
+const authText   = computed(() => {
+  if (!isLoggedIn.value) return 'Connexion'
+  const name = mdAndUp.value
+    ? authStore.userName
+    : authStore.user?.first_name ?? authStore.userName
+  return name.length > 18 ? name.slice(0, 16).trimEnd() + '…' : name
+})
 
-const authText = computed(() => authStore.isLoggedIn ? authStore.userName : 'Connexion')
-const authLink = computed(() => authStore.isLoggedIn ? '/compte' : '/connexion')
-
-
-const menuItems = [
+const menuItems = computed(() => [
   { title: 'Accueil', to: '/' },
-  { title: 'Catalogue des Ressources', to: '/catalogue' },
-  { title: 'Mon compte', to: '/compte' },
-  { title: 'Mes ressources', to: '/mes-ressources' },
-  { title: 'Créer une ressource', to: '/creer' },
-  { title: 'Mentions Légales', to: '/mentions' },
+  { title: 'Catalogue', to: '/catalogue' },
+  ...(isLoggedIn.value ? [
+    { title: 'Mon compte', to: '/compte' },
+    { title: 'Mes ressources', to: '/mes-ressources' },
+  ] : []),
+  { title: 'Mentions légales', to: '/mentions' },
   { title: 'FAQ', to: '/faq' },
   { title: 'Contact', to: '/contact' },
-]
+])
 </script>
