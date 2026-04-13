@@ -5,10 +5,10 @@
     "main": "src/server.js",
     "scripts": {
         "setup": "npm install && npm update",
-        "start": "node src/server.js",
-        "test": "jest --forceExit --testPathIgnorePatterns=integration",
-        "test:integration": "jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
-        "test:all": "jest --forceExit --runInBand"
+        "start": "node --experimental-vm-modules src/server.js",
+        "test": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testPathIgnorePatterns=integration",
+        "test:integration": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
+        "test:all": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --runInBand"
     },
     "jest": {
         "testEnvironment": "node",
@@ -23,6 +23,7 @@
     ],
     "license": "UNLICENSED",
     "dependencies": {
+        "@aws-sdk/client-s3": "^3.1029.0",
         "bcryptjs": "^2.4.3",
         "cookie-parser": "^1.4.4",
         "cors": "^2.8.5",

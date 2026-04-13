@@ -61,6 +61,7 @@ const SCHEMA_SQL = `
             CHECK (status IN ('draft', 'pending', 'validated', 'suspended')),
         visibility VARCHAR(20) NOT NULL DEFAULT 'public'
             CHECK (visibility IN ('private', 'shared', 'public')),
+        media_url TEXT,
         views INT NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

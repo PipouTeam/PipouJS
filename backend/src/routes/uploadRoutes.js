@@ -1,32 +1,32 @@
 const router  = require('express').Router();
 const multer  = require('multer');
-const path    = require('path');
 const { requireAuth } = require('../middleware/auth');
+const { uploadFile }  = require('../services/s3');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename:    (req, file, cb) => {
-        const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-        cb(null, unique + path.extname(file.originalname));
-    },
-});
-
+// Stockage en mémoire — le fichier est envoyé directement à S3
 const upload = multer({
-    storage,
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20 Mo
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50 Mo
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'application/pdf') return cb(null, true);
-        cb(new Error('Seuls les fichiers PDF sont acceptés'));
+        const allowed = [
+            'application/pdf',
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+            'video/mp4', 'video/webm',
+            'audio/mpeg', 'audio/ogg',
+        ];
+        if (allowed.includes(file.mimetype)) return cb(null, true);
+        cb(new Error('Type de fichier non supporté'));
     },
 });
 
-// POST /api/upload — retourne l'URL publique du fichier
-router.post('/', requireAuth, upload.single('file'), (req, res) => {
+// POST /api/upload — upload vers S3/Cellar, retourne l'URL publique
+router.post('/', requireAuth, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ status: false, message: 'Aucun fichier reçu' });
     }
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    return res.json({ status: true, url: fileUrl });
+
+    const url = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype);
+    return res.json({ status: true, url });
 });
 
 module.exports = router;

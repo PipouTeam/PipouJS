@@ -25,6 +25,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/SearchBar.vue')['default']
     SubTitle: typeof import('./src/components/SubTitle.vue')['default']
+    TiptapEditor: typeof import('./src/components/TiptapEditor.vue')['default']
     Title: typeof import('./src/components/Title.vue')['default']
   }
 }
