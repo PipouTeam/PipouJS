@@ -89,7 +89,7 @@
 
         <h2 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-4">Contenu</h2>
 
-        <!-- Toggle PDF / YouTube -->
+        <!-- Toggle fichier / lien -->
         <v-btn-toggle
           v-model="contentType"
           color="primary"
@@ -99,28 +99,25 @@
           mandatory
           class="mb-5"
         >
-          <v-btn value="pdf"     prepend-icon="mdi-file-pdf-box">PDF</v-btn>
-          <v-btn value="youtube" prepend-icon="mdi-youtube">Vidéo YouTube</v-btn>
-          <v-btn value="text"    prepend-icon="mdi-text-long">Texte</v-btn>
-          <v-btn value="pdf" prepend-icon="mdi-file-pdf-box">PDF</v-btn>
-          <v-btn value="youtube" prepend-icon="mdi-youtube">Vidéo YouTube</v-btn>
+          <v-btn value="file" prepend-icon="mdi-upload-outline">Fichier</v-btn>
+          <v-btn value="link" prepend-icon="mdi-link-variant">Lien / YouTube</v-btn>
         </v-btn-toggle>
 
-        <!-- Upload PDF -->
-        <div v-if="contentType === 'pdf'">
+        <!-- Upload fichier -->
+        <div v-if="contentType === 'file'">
           <v-file-input
-            v-model="pdfFile"
-            label="Sélectionner un fichier PDF"
-            prepend-icon=""
+            v-model="selectedFile"
+            label="Sélectionner un fichier (PDF, image, vidéo, audio)"
+            :prepend-icon="null"
             prepend-inner-icon="mdi-upload-outline"
-            accept=".pdf"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mp3,.ogg"
             variant="outlined"
             density="comfortable"
             show-size
-            :rules="[v => (!!v?.length || !!form.content) || 'Veuillez sélectionner un fichier PDF.']"
+            :error-messages="fileError"
             @update:model-value="onFileChange"
           />
-          <!-- Aperçu si déjà uploadé -->
+          <v-progress-linear v-if="uploading" indeterminate color="primary" class="mt-2" rounded />
           <v-alert
             v-if="uploadedUrl"
             type="success"
@@ -132,36 +129,20 @@
           >
             Fichier prêt : {{ uploadedFileName }}
           </v-alert>
-          <v-progress-linear v-if="uploading" indeterminate color="primary" class="mt-2" rounded />
         </div>
 
-        <!-- Texte libre -->
-        <div v-else-if="contentType === 'text'">
-          <v-textarea
-            v-model="form.content"
-            label="Contenu textuel"
-            prepend-inner-icon="mdi-text-long"
-            variant="outlined"
-            rows="10"
-            auto-grow
-            counter
-            placeholder="Rédigez ici le contenu de votre ressource..."
-            :rules="[v => !!v?.trim() || 'Le contenu est obligatoire.']"
-          />
-        </div>
-
-        <!-- URL YouTube -->
+        <!-- URL libre (YouTube, site, etc.) -->
         <div v-else>
           <v-text-field
             v-model="form.content"
-            label="URL de la vidéo YouTube"
-            prepend-inner-icon="mdi-youtube"
-            placeholder="https://www.youtube.com/watch?v=..."
+            label="URL (YouTube, site web, etc.)"
+            prepend-inner-icon="mdi-link-variant"
+            placeholder="https://..."
             variant="outlined"
             density="comfortable"
-            :rules="youtubeRules"
+            :rules="[v => !!v?.trim() || 'L\'URL est obligatoire.']"
           />
-          <!-- Aperçu miniature -->
+          <!-- Aperçu YouTube -->
           <div v-if="youtubeEmbedId" class="mt-3 rounded-lg overflow-hidden" style="aspect-ratio: 16/9; max-height: 240px">
             <iframe
               :src="`https://www.youtube.com/embed/${youtubeEmbedId}`"
@@ -216,15 +197,16 @@ onMounted(async () => {
     api.get('/relation-types'),
   ])
   categories.value   = cat.categories   ?? cat
-  resourceTypes.value = rtype.resourceTypes ?? rtype
-  relationTypes.value = reltype.relationTypes ?? reltype
+  resourceTypes.value = rtype.resource_types ?? rtype
+  relationTypes.value = reltype.relation_types ?? reltype
 })
 
 // Formulaire
-const formRef   = ref(null)
-const form      = ref({
+const formRef = ref(null)
+const form = ref({
   title:            '',
   content:          '',
+  media_url:        '',
   category_id:      null,
   resource_type_id: null,
   relation_type_id: null,
@@ -237,22 +219,22 @@ const visibilityOptions = [
   { value: 'private', label: 'Privé — visible uniquement par moi' },
 ]
 
-// Contenu : PDF ou YouTube
-const contentType    = ref('pdf')
-const pdfFile        = ref([])
-const uploadedUrl    = ref('')
+// Upload fichier
+const contentType     = ref('file')
+const selectedFile    = ref(null)
+const uploadedUrl     = ref('')
 const uploadedFileName = ref('')
-const uploading      = ref(false)
+const uploading       = ref(false)
+const fileError       = ref('')
 
-watch(contentType, () => {
-  form.value.content = ''
-  uploadedUrl.value  = ''
-  pdfFile.value      = []
-})
+async function onFileChange(fileOrFiles) {
+  const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles
+  fileError.value = ''
+  uploadedUrl.value = ''
+  uploadedFileName.value = ''
+  form.value.media_url = ''
 
-async function onFileChange(files) {
-  const file = files?.[0]
-  if (!file) { uploadedUrl.value = ''; return }
+  if (!file) return
 
   uploading.value = true
   try {
@@ -266,13 +248,13 @@ async function onFileChange(files) {
       body: formData,
     })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.message)
+    if (!res.ok) throw new Error(data.message || 'Erreur lors de l\'upload')
 
     uploadedUrl.value      = data.url
     uploadedFileName.value = file.name
-    form.value.content     = data.url
+    form.value.media_url   = data.url
   } catch (e) {
-    submitError.value = e.message
+    fileError.value = e.message
   } finally {
     uploading.value = false
   }
@@ -281,30 +263,32 @@ async function onFileChange(files) {
 // Aperçu YouTube
 const youtubeEmbedId = computed(() => {
   const url = form.value.content
+  if (!url) return null
   const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
   return match ? match[1] : null
 })
-
-const youtubeRules = [
-  v => !!v?.trim() || 'L\'URL YouTube est obligatoire.',
-  v => /youtube\.com|youtu\.be/.test(v) || 'Veuillez entrer une URL YouTube valide.',
-]
 
 // Soumission
 const submitting  = ref(false)
 const submitError = ref('')
 
 async function handleSubmit() {
+  submitError.value = ''
+
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
-  if (!form.value.content) {
-    submitError.value = 'Veuillez ajouter un fichier PDF ou une URL YouTube.'
+  // Vérifier qu'il y a du contenu selon le mode
+  if (contentType.value === 'file' && !form.value.media_url) {
+    fileError.value = 'Veuillez sélectionner et uploader un fichier.'
+    return
+  }
+  if (contentType.value === 'link' && !form.value.content?.trim()) {
+    submitError.value = 'Veuillez entrer une URL.'
     return
   }
 
-  submitting.value  = true
-  submitError.value = ''
+  submitting.value = true
   try {
     await api.post('/resources', form.value, true)
     router.push('/mes-ressources')

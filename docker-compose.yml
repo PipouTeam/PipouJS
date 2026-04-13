@@ -27,6 +27,7 @@ services:
       SECRET: change_me_in_production
       FRONTEND_URL: http://localhost:3000
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_URL: http://localhost:9000
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_BUCKET: pipou-resources
