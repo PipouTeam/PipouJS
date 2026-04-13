@@ -80,6 +80,34 @@ module.exports = {
         return res.json({ status: true, user: result.rows[0] });
     },
 
+    // U07 - Changer son mot de passe
+    async changePassword(req, res) {
+        if (!hasKeys(req.body, ['current_password', 'new_password'])) {
+            return res.status(400).json({ status: false, message: 'Champs requis : current_password, new_password' });
+        }
+        const { current_password, new_password } = req.body;
+
+        if (new_password.length < 8) {
+            return res.status(400).json({ status: false, message: 'Le nouveau mot de passe doit contenir au moins 8 caractères' });
+        }
+
+        const result = await db.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+        const user = result.rows[0];
+
+        const valid = await bcrypt.compare(current_password, user.password);
+        if (!valid) {
+            return res.status(401).json({ status: false, message: 'Mot de passe actuel incorrect' });
+        }
+
+        const hash = await bcrypt.hash(new_password, 10);
+        await db.query(
+            'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [hash, req.user.id]
+        );
+
+        return res.json({ status: true, message: 'Mot de passe mis à jour' });
+    },
+
     // U06 - Modifier son propre profil
     async updateMe(req, res) {
         const { first_name, last_name, email } = req.body;

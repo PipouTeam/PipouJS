@@ -6,11 +6,15 @@
     "scripts": {
         "setup": "npm install && npm update",
         "start": "node src/server.js",
-        "test": "jest --forceExit"
+        "test": "jest --forceExit --testPathIgnorePatterns=integration",
+        "test:integration": "jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
+        "test:all": "jest --forceExit --runInBand"
     },
     "jest": {
         "testEnvironment": "node",
-        "testMatch": ["**/tests/**/*.test.js"]
+        "testMatch": [
+            "**/tests/**/*.test.js"
+        ]
     },
     "keywords": [
         "express",
@@ -31,10 +35,14 @@
         "mandatoryenv": "^1.1.1",
         "module-alias": "^2.2.2",
         "morgan": "^1.9.1",
+        "multer": "^2.1.1",
         "pg": "^8.20.0",
-        "rotating-file-stream": "^1.4.6"
+        "rotating-file-stream": "^1.4.6",
+        "swagger-jsdoc": "^6.2.8",
+        "swagger-ui-express": "^5.0.1"
     },
     "devDependencies": {
-        "jest": "^30.3.0"
+        "jest": "^30.3.0",
+        "supertest": "^7.2.2"
     }
 }

@@ -19,9 +19,13 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/article': RouteRecordInfo<'/article', '/article', Record<never, never>, Record<never, never>>,
+    '/article': RouteRecordInfo<'/article', '/article', Record<never, never>, Record<never, never>, '/article/[id]'>,
+    '/article/[id]': RouteRecordInfo<'/article/[id]', '/article/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/catalogue': RouteRecordInfo<'/catalogue', '/catalogue', Record<never, never>, Record<never, never>>,
+    '/compte': RouteRecordInfo<'/compte', '/compte', Record<never, never>, Record<never, never>>,
     '/connexion': RouteRecordInfo<'/connexion', '/connexion', Record<never, never>, Record<never, never>>,
+    '/creer': RouteRecordInfo<'/creer', '/creer', Record<never, never>, Record<never, never>>,
+    '/mes-ressources': RouteRecordInfo<'/mes-ressources', '/mes-ressources', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -40,15 +44,31 @@ declare module 'vue-router/auto-routes' {
       views: never
     }
     'src/pages/article.vue': {
-      routes: '/article'
+      routes: '/article' | '/article/[id]'
+      views: 'default'
+    }
+    'src/pages/article/[id].vue': {
+      routes: '/article/[id]'
       views: never
     }
     'src/pages/catalogue.vue': {
       routes: '/catalogue'
       views: never
     }
+    'src/pages/compte.vue': {
+      routes: '/compte'
+      views: never
+    }
     'src/pages/connexion.vue': {
       routes: '/connexion'
+      views: never
+    }
+    'src/pages/creer.vue': {
+      routes: '/creer'
+      views: never
+    }
+    'src/pages/mes-ressources.vue': {
+      routes: '/mes-ressources'
       views: never
     }
   }

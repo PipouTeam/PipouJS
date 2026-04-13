@@ -1,7 +1,3 @@
-const app = require('./app');
-
-const { PORT } = process.env;
-
 
 
 // Patches
@@ -32,8 +28,6 @@ require('mandatoryenv').load([
     'SECRET'
 ]);
 
-const { PORT } = process.env;
-
 
 // Instantiate an Express Application
 const app = express();
@@ -51,7 +45,6 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
 }));
-
 // Swagger — helmet désactivé sur cette route pour autoriser les assets UI
 app.use('/api/docs', swaggerUi.serve);
 app.get('/api/docs', swaggerUi.setup(swaggerSpec));
@@ -63,9 +56,6 @@ app.use('*', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     next();
 })
-
-// Fichiers uploadés accessibles publiquement
-app.use('/uploads', require('express').static('uploads'));
 
 // Assign Routes
 
@@ -82,8 +72,4 @@ app.use('*', (req, res) => {
     .json( {status: false, message: 'Endpoint Not Found'} );
 })
 
-// Open Server on selected Port
-app.listen(
-    PORT,
-    () => console.info('Server listening on port ', PORT)
-);
+module.exports = app;
