@@ -13,6 +13,8 @@ const helmet = require('helmet');
 
 
 const logger = require('./util/logger');
+const swaggerUi   = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 // Load .env Enviroment Variables to process.env
 
@@ -45,6 +47,11 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
 }));
+
+// Swagger — helmet désactivé sur cette route pour autoriser les assets UI
+app.use('/api/docs', swaggerUi.serve);
+app.get('/api/docs', swaggerUi.setup(swaggerSpec));
+
 app.use(helmet());
 
 // This middleware adds the json header to every response
@@ -52,6 +59,9 @@ app.use('*', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     next();
 })
+
+// Fichiers uploadés accessibles publiquement
+app.use('/uploads', require('express').static('uploads'));
 
 // Assign Routes
 

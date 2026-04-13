@@ -59,23 +59,15 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const router = useRouter()
+const authStore = useAuthStore()
 const menuModal = ref(false)
 
-// GESTION DE L'AUTHENTIFICATION
-// TODO : Gestion de l'authentification avec le store
-const isLoggedIn = ref(false) 
-const userName = ref('Stéphane')
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 
-const authText = computed(() => {
-  return isLoggedIn.value ? userName.value : 'Connexion'
-})
-
-const authLink = computed(() => {
-  return isLoggedIn.value ? '/compte' : '/connexion'
-})
+const authText = computed(() => authStore.isLoggedIn ? authStore.userName : 'Connexion')
+const authLink = computed(() => authStore.isLoggedIn ? '/compte' : '/connexion')
 
 
 const menuItems = [
