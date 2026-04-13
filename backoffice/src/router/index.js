@@ -27,6 +27,21 @@ const routes = [
         path: 'resources',
         name: 'Resources',
         component: () => import('../views/ResourcesView.vue')
+      },
+      {
+        path: 'categories',
+        name: 'Categories',
+        component: () => import('../views/CategoriesView.vue')
+      },
+      {
+        path: 'relation-types',
+        name: 'RelationTypes',
+        component: () => import('../views/RelationTypesView.vue')
+      },
+      {
+        path: 'resource-types',
+        name: 'ResourceTypes',
+        component: () => import('../views/ResourceTypesView.vue')
       }
     ]
   }

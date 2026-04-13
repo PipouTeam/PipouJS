@@ -204,7 +204,7 @@ module.exports = {
 
     // C01/C02 : Liste admin avec tous statuts et filtres
     async adminList(req, res) {
-        const { status, category_id, author_id, page = 1, limit = 20 } = req.query;
+        const { status, category_id, relation_type_id, resource_type_id, author_id, page = 1, limit = 20 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const conditions = [];
         const values = [];
@@ -212,6 +212,8 @@ module.exports = {
 
         if (status) { conditions.push(`r.status = $${i++}`); values.push(status); }
         if (category_id) { conditions.push(`r.category_id = $${i++}`); values.push(category_id); }
+        if (relation_type_id) { conditions.push(`r.relation_type_id = $${i++}`); values.push(relation_type_id); }
+        if (resource_type_id) { conditions.push(`r.resource_type_id = $${i++}`); values.push(resource_type_id); }
         if (author_id) { conditions.push(`r.author_id = $${i++}`); values.push(author_id); }
 
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';

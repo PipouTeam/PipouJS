@@ -10,8 +10,8 @@
       </div>
     </div>
 
-    <v-card>
-      <v-card-title>
+    <v-card class="mb-4">
+      <v-card-text class="d-flex align-center" style="gap: 8px; flex-wrap: wrap;">
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
@@ -19,15 +19,86 @@
           single-line
           hide-details
           density="compact"
-          class="mb-2"
+          variant="outlined"
+          class=""
+          style="width: 200px;"
         ></v-text-field>
-      </v-card-title>
+        <v-select
+          v-model="filters.category_id"
+          label="Catégorie"
+          :items="categories"
+          item-title="name"
+          item-value="id"
+          clearable
+          density="compact"
+          variant="outlined"
+          class="mt-5"
+          style="width: 70px;"
+          @update:model-value="applyFilters"
+        ></v-select>
+        <v-select
+          v-model="filters.relation_type_id"
+          label="Relation"
+          :items="relationTypes"
+          item-title="name"
+          item-value="id"
+          clearable
+          density="compact"
+          variant="outlined"
+          class="mt-5"
+          style="width: 70px;"
+          @update:model-value="applyFilters"
+        ></v-select>
+        <v-select
+          v-model="filters.resource_type_id"
+          label="Ressource"
+          :items="resourceTypes"
+          item-title="name"
+          item-value="id"
+          clearable
+          density="compact"
+          variant="outlined"
+          class="mt-5"
+          style="width: 70px;"
+          @update:model-value="applyFilters"
+        ></v-select>
+        <v-select
+          v-model="filters.status"
+          label="Statut"
+          :items="statuses"
+          clearable
+          density="compact"
+          variant="outlined"
+          class="mt-5"
+          style="width: 70px;"
+          @update:model-value="applyFilters"
+        ></v-select>
+        <v-btn color="grey-darken-1" variant="outlined" @click="resetFilters" style="height: 40px;">
+          <v-icon left size="small">mdi-filter-remove</v-icon>
+          Reset
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
+    <v-card>
       <v-data-table
         :headers="headers"
         :items="resources"
         :search="search"
         :loading="loading"
       >
+        <template v-slot:item.category="{ item }">
+          {{ item.category || '-' }}
+        </template>
+        <template v-slot:item.relation_type="{ item }">
+          {{ item.relation_type || '-' }}
+        </template>
+        <template v-slot:item.resource_type="{ item }">
+          {{ item.resource_type || '-' }}
+        </template>
+        <template v-slot:item.author="{ item }">
+          {{ item.author_first_name }} {{ item.author_last_name }}
+        </template>
         <template v-slot:item.status="{ item }">
           <v-chip :color="getStatusColor(item.status)" size="small">
             {{ item.status }}
@@ -123,6 +194,13 @@ const saving = ref(false)
 const dialog = ref(false)
 const editMode = ref(false)
 const search = ref('')
+const filters = ref({
+  category_id: null,
+  relation_type_id: null,
+  resource_type_id: null,
+  status: null
+})
+const statuses = ['draft', 'pending', 'validated', 'suspended']
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
@@ -141,9 +219,11 @@ const resource = ref({
 const headers = [
   { title: 'ID', key: 'id' },
   { title: 'Titre', key: 'title' },
-  { title: 'Auteur', key: 'author_first_name' },
+  { title: 'Catégorie', key: 'category' },
+  { title: 'Type relation', key: 'relation_type' },
+  { title: 'Type ressource', key: 'resource_type' },
+  { title: 'Auteur', key: 'author' },
   { title: 'Statut', key: 'status' },
-  { title: 'Visibilité', key: 'visibility' },
   { title: 'Vues', key: 'views' },
   { title: 'Actions', key: 'actions', sortable: false }
 ]
@@ -161,13 +241,33 @@ const getStatusColor = (status) => {
 const fetchResources = async () => {
   loading.value = true
   try {
-    const { data } = await axios.get('/api/admin/resources')
+    const params = new URLSearchParams()
+    if (filters.value.category_id) params.append('category_id', filters.value.category_id)
+    if (filters.value.relation_type_id) params.append('relation_type_id', filters.value.relation_type_id)
+    if (filters.value.resource_type_id) params.append('resource_type_id', filters.value.resource_type_id)
+    if (filters.value.status) params.append('status', filters.value.status)
+
+    const { data } = await axios.get(`/api/admin/resources?${params.toString()}`)
     resources.value = data.resources || []
   } catch (e) {
     showSnackbar('Erreur lors du chargement', 'error')
   } finally {
     loading.value = false
   }
+}
+
+const applyFilters = () => {
+  fetchResources()
+}
+
+const resetFilters = () => {
+  filters.value = {
+    category_id: null,
+    relation_type_id: null,
+    resource_type_id: null,
+    status: null
+  }
+  fetchResources()
 }
 
 const fetchOptions = async () => {
@@ -178,8 +278,8 @@ const fetchOptions = async () => {
       axios.get('/api/resource-types')
     ])
     categories.value = catRes.data.categories || []
-    relationTypes.value = relRes.data.relationTypes || []
-    resourceTypes.value = typeRes.data.resourceTypes || []
+    relationTypes.value = relRes.data.relation_types || []
+    resourceTypes.value = typeRes.data.resource_types || []
   } catch (e) {
     console.error(e)
   }
