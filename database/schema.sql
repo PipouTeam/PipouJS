@@ -87,6 +87,13 @@ INSERT INTO relation_types (name) VALUES
 INSERT INTO resource_types (name) VALUES
     ('Article'), ('Vidéo'), ('Jeu'), ('Cours'), ('Carte défi'), ('Podcast');
 
+-- Comptes par défaut (mot de passe : Password123!)
+INSERT INTO users (email, password, first_name, last_name, role) VALUES
+    ('citizen@test.com',     '$2a$10$m62NLkn3xF0WhvkTM5AykecXYQ1bQZdjO4QVmMfayVnFQAN.DbUty', 'Jean',    'Citoyen',    'citizen'),
+    ('moderator@test.com',   '$2a$10$m62NLkn3xF0WhvkTM5AykecXYQ1bQZdjO4QVmMfayVnFQAN.DbUty', 'Marie',   'Modératrice','moderator'),
+    ('admin@test.com',       '$2a$10$m62NLkn3xF0WhvkTM5AykecXYQ1bQZdjO4QVmMfayVnFQAN.DbUty', 'Pierre',  'Admineur',   'admin'),
+    ('superadmin@test.com',  '$2a$10$m62NLkn3xF0WhvkTM5AykecXYQ1bQZdjO4QVmMfayVnFQAN.DbUty', 'Sophie',  'SuperAdmin', 'super_admin');
+
 -- Utilisateurs de test
 -- Admin: admin@mail.com / admin123
 -- User: user@mail.com / user123
