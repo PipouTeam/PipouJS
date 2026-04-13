@@ -15,4 +15,7 @@ router.put('/:id/activate', requireAuth, requireRole('admin'), userController.ac
 // U05 - Créer un compte staff (super_admin)
 router.post('/staff', requireAuth, requireRole('super_admin'), userController.createStaff);
 
+// RGPD - Supprimer un utilisateur et purger ses fichiers S3 (admin)
+router.delete('/:id', requireAuth, requireRole('admin'), userController.deleteUser);
+
 module.exports = router;

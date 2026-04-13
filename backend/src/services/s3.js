@@ -32,11 +32,8 @@ async function uploadFile(buffer, originalName, mimetype) {
         ACL: 'public-read',
     }));
 
-    // URL publique — path-style fonctionne partout (MinIO local + Cellar)
-    // En local : http://localhost:9000/pipou-resources/key
-    // En prod on peut utiliser S3_PUBLIC_URL pour un CDN ou virtual-hosted
     const base = process.env.S3_PUBLIC_URL || process.env.S3_ENDPOINT;
-    return `${base}/${BUCKET}/${key}`;
+    return { url: `${base}/${BUCKET}/${key}`, key };
 }
 
 /**
@@ -59,4 +56,18 @@ async function deleteFile(fileUrl) {
     }
 }
 
-module.exports = { uploadFile, deleteFile };
+/**
+ * Supprime plusieurs fichiers S3 par leurs clés.
+ * @param {string[]} keys - Liste de clés S3
+ */
+async function deleteFiles(keys) {
+    for (const key of keys) {
+        try {
+            await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+        } catch (err) {
+            console.error(`S3 delete error (${key}):`, err.message);
+        }
+    }
+}
+
+module.exports = { uploadFile, deleteFile, deleteFiles };

@@ -2,6 +2,7 @@ const router  = require('express').Router();
 const multer  = require('multer');
 const { requireAuth } = require('../middleware/auth');
 const { uploadFile }  = require('../services/s3');
+const db = require('../models/database');
 
 // Stockage en mémoire — le fichier est envoyé directement à S3
 const upload = multer({
@@ -25,7 +26,14 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
         return res.status(400).json({ status: false, message: 'Aucun fichier reçu' });
     }
 
-    const url = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype);
+    const { url, key } = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype);
+
+    // Traçabilité RGPD : lier le fichier à l'utilisateur
+    await db.query(
+        'INSERT INTO user_files (user_id, s3_key, original_name, mime_type, size_bytes) VALUES ($1, $2, $3, $4, $5)',
+        [req.user.id, key, req.file.originalname, req.file.mimetype, req.file.size]
+    );
+
     return res.json({ status: true, url });
 });
 

@@ -10,7 +10,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
 
   backend:
     build: ./backend
@@ -47,18 +48,15 @@ services:
     volumes:
       - minio_data:/data
 
-  # Crée automatiquement le bucket au démarrage
+  # Crée le bucket + seed les fichiers de démo au démarrage
   minio-init:
     image: minio/mc
     depends_on:
       - minio
-    entrypoint: >
-      /bin/sh -c "
-      sleep 2;
-      mc alias set local http://minio:9000 minioadmin minioadmin;
-      mc mb --ignore-existing local/pipou-resources;
-      mc anonymous set download local/pipou-resources;
-      "
+    volumes:
+      - ./database/seed-s3.sh:/seed-s3.sh
+      - ./database/seed-images:/seed-images
+    entrypoint: /bin/sh /seed-s3.sh
 
 volumes:
   postgres_data:
