@@ -102,6 +102,8 @@
           <v-btn value="pdf"     prepend-icon="mdi-file-pdf-box">PDF</v-btn>
           <v-btn value="youtube" prepend-icon="mdi-youtube">Vidéo YouTube</v-btn>
           <v-btn value="text"    prepend-icon="mdi-text-long">Texte</v-btn>
+          <v-btn value="pdf" prepend-icon="mdi-file-pdf-box">PDF</v-btn>
+          <v-btn value="youtube" prepend-icon="mdi-youtube">Vidéo YouTube</v-btn>
         </v-btn-toggle>
 
         <!-- Upload PDF -->
