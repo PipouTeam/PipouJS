@@ -16,15 +16,14 @@ declare module 'vue' {
     ArticleContent: typeof import('./src/components/ArticleContent.vue')['default']
     ArticleHeader: typeof import('./src/components/ArticleHeader.vue')['default']
     CatalogueCard: typeof import('./src/components/CatalogueCard.vue')['default']
-    copy: typeof import('./src/components/Title copy.vue')['default']
+    EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     FeaturedCarousel: typeof import('./src/components/FeaturedCarousel.vue')['default']
-    HelloWorld: typeof import('./src/components/Title.vue')['default']
-    MonComponent: typeof import('./src/components/Title.vue')['default']
-    PageAccueil: typeof import('./src/components/HelloWorld.vue')['default']
+    ResourceList: typeof import('./src/components/ResourceList.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/SearchBar.vue')['default']
     SubTitle: typeof import('./src/components/SubTitle.vue')['default']
+    TiptapEditor: typeof import('./src/components/TiptapEditor.vue')['default']
     Title: typeof import('./src/components/Title.vue')['default']
   }
 }

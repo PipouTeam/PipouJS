@@ -10,7 +10,7 @@ const RESOURCE_JOINS = `
 `;
 
 const RESOURCE_FIELDS = `
-    r.id, r.title, r.content, r.status, r.visibility, r.views, r.created_at, r.updated_at,
+    r.id, r.title, r.content, r.media_url, r.thumbnail_url, r.status, r.visibility, r.views, r.created_at, r.updated_at,
     c.name AS category, c.id AS category_id,
     rt.name AS relation_type, rt.id AS relation_type_id,
     rtype.name AS resource_type, rtype.id AS resource_type_id,
@@ -125,16 +125,16 @@ module.exports = {
         if (!hasKeys(req.body, ['title'])) {
             return res.status(400).json({ status: false, message: 'Champ requis : title' });
         }
-        const { title, content, category_id, relation_type_id, resource_type_id, visibility = 'public' } = req.body;
+        const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility = 'public' } = req.body;
 
         const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
         // Si citoyen publie publiquement → en attente de modération
         const status = (!isAdmin && visibility === 'public') ? 'pending' : 'validated';
 
         const result = await db.query(
-            `INSERT INTO resources (title, content, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-            [title, content, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
+            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
         );
 
         return res.status(201).json({ status: true, message: 'Ressource créée', id: result.rows[0].id });
@@ -156,13 +156,15 @@ module.exports = {
             return res.status(403).json({ status: false, message: 'Accès refusé' });
         }
 
-        const { title, content, category_id, relation_type_id, resource_type_id, visibility } = req.body;
+        const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility } = req.body;
         const fields = [];
         const values = [];
         let i = 1;
 
         if (title !== undefined) { fields.push(`title = $${i++}`); values.push(title); }
         if (content !== undefined) { fields.push(`content = $${i++}`); values.push(content); }
+        if (media_url !== undefined) { fields.push(`media_url = $${i++}`); values.push(media_url); }
+        if (thumbnail_url !== undefined) { fields.push(`thumbnail_url = $${i++}`); values.push(thumbnail_url); }
         if (category_id !== undefined) { fields.push(`category_id = $${i++}`); values.push(category_id); }
         if (relation_type_id !== undefined) { fields.push(`relation_type_id = $${i++}`); values.push(relation_type_id); }
         if (resource_type_id !== undefined) { fields.push(`resource_type_id = $${i++}`); values.push(resource_type_id); }
@@ -183,7 +185,7 @@ module.exports = {
     // CR03 : Supprimer sa ressource
     async remove(req, res) {
         const { id } = req.params;
-        const resource = await db.query('SELECT author_id FROM resources WHERE id = $1', [id]);
+        const resource = await db.query('SELECT author_id, media_url FROM resources WHERE id = $1', [id]);
 
         if (resource.rows.length === 0) {
             return res.status(404).json({ status: false, message: 'Ressource introuvable' });
@@ -194,6 +196,12 @@ module.exports = {
 
         if (!isOwner && !isAdmin) {
             return res.status(403).json({ status: false, message: 'Accès refusé' });
+        }
+
+        // Nettoyage S3
+        if (resource.rows[0].media_url) {
+            const { deleteFile } = require('../services/s3');
+            await deleteFile(resource.rows[0].media_url);
         }
 
         await db.query('DELETE FROM resources WHERE id = $1', [id]);
@@ -238,12 +246,12 @@ module.exports = {
         if (!hasKeys(req.body, ['title'])) {
             return res.status(400).json({ status: false, message: 'Champ requis : title' });
         }
-        const { title, content, category_id, relation_type_id, resource_type_id, visibility = 'public', status = 'validated' } = req.body;
+        const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility = 'public', status = 'validated' } = req.body;
 
         const result = await db.query(
-            `INSERT INTO resources (title, content, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-            [title, content, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
+            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
         );
 
         return res.status(201).json({ status: true, message: 'Ressource créée', id: result.rows[0].id });
@@ -252,13 +260,15 @@ module.exports = {
     // C04 : Modifier une ressource (admin)
     async adminUpdate(req, res) {
         const { id } = req.params;
-        const { title, content, category_id, relation_type_id, resource_type_id, visibility, status } = req.body;
+        const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility, status } = req.body;
         const fields = [];
         const values = [];
         let i = 1;
 
         if (title !== undefined) { fields.push(`title = $${i++}`); values.push(title); }
         if (content !== undefined) { fields.push(`content = $${i++}`); values.push(content); }
+        if (media_url !== undefined) { fields.push(`media_url = $${i++}`); values.push(media_url); }
+        if (thumbnail_url !== undefined) { fields.push(`thumbnail_url = $${i++}`); values.push(thumbnail_url); }
         if (category_id !== undefined) { fields.push(`category_id = $${i++}`); values.push(category_id); }
         if (relation_type_id !== undefined) { fields.push(`relation_type_id = $${i++}`); values.push(relation_type_id); }
         if (resource_type_id !== undefined) { fields.push(`resource_type_id = $${i++}`); values.push(resource_type_id); }
@@ -287,10 +297,18 @@ module.exports = {
     // C05 : Supprimer (admin)
     async adminRemove(req, res) {
         const { id } = req.params;
-        const result = await db.query('DELETE FROM resources WHERE id = $1 RETURNING id', [id]);
-        if (result.rows.length === 0) {
+        const resource = await db.query('SELECT media_url FROM resources WHERE id = $1', [id]);
+        if (resource.rows.length === 0) {
             return res.status(404).json({ status: false, message: 'Ressource introuvable' });
         }
+
+        // Nettoyage S3
+        if (resource.rows[0].media_url) {
+            const { deleteFile } = require('../services/s3');
+            await deleteFile(resource.rows[0].media_url);
+        }
+
+        await db.query('DELETE FROM resources WHERE id = $1', [id]);
         return res.json({ status: true, message: 'Ressource supprimée' });
     },
 

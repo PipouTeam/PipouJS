@@ -23,42 +23,28 @@
       >
         {{ contentType }}
       </v-chip>
-
-      <v-chip
-        v-if="minAge"
-        color="secondary"
-        variant="tonal"
-        prepend-icon="mdi-account-child-outline"
-        rounded="sm"
-      >
-        À partir de {{ minAge }} ans
-      </v-chip>
     </div>
 
     <v-divider class="mb-6 border-opacity-25" />
 
     <!-- Description -->
-    <p class="text-body-1 text-grey-darken-3 mb-6" style="max-width: 72ch; line-height: 1.75">
+    <p class="text-body-1 text-grey-darken-3" style="max-width: 72ch; line-height: 1.75">
       {{ description }}
     </p>
-
-    <!-- Actions (slot pour boutons externes ex: favoris) -->
-    <slot name="actions" />
 
   </v-container>
 </template>
 
 <script setup>
-defineProps({
-  title:       { type: String, default: "Nom de l'article" },
+const props = defineProps({
+  title:       { type: String, default: "Nom de la ressource" },
   contentType: { type: String, default: 'Document' },
-  minAge:      { type: Number, default: null },
-  description: { type: String, default: "Description de l'article." },
+  description: { type: String, default: '' },
 })
 
 const breadcrumbs = [
   { title: 'Accueil',   to: '/' },
   { title: 'Catalogue', to: '/catalogue' },
-  { title: 'Article',   disabled: true },
+  { title: props.contentType || 'Ressource', disabled: true },
 ]
 </script>

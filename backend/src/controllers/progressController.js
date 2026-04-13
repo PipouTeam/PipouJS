@@ -1,14 +1,14 @@
 const db = require('../models/database');
 
 module.exports = {
-    // P05 : Tableau de bord — favoris + exploités
+    // P05 : Tableau de bord — favoris + exploités + mis de côté
     async dashboard(req, res) {
         const userId = req.user.id;
 
         const result = await db.query(`
             SELECT
-                ur.is_favorite, ur.is_exploited,
-                r.id, r.title, r.visibility, r.status,
+                ur.is_favorite, ur.is_exploited, ur.is_saved,
+                r.id, r.title, r.thumbnail_url, r.visibility, r.status,
                 c.name  AS category,  c.id  AS category_id,
                 rt.name AS resource_type, rt.id AS resource_type_id
             FROM user_resources ur
@@ -18,10 +18,11 @@ module.exports = {
             WHERE ur.user_id = $1
         `, [userId]);
 
-        const favorites = result.rows.filter(r => r.is_favorite)
-        const exploited = result.rows.filter(r => r.is_exploited)
+        const favorites = result.rows.filter(r => r.is_favorite);
+        const exploited = result.rows.filter(r => r.is_exploited);
+        const saved     = result.rows.filter(r => r.is_saved);
 
-        return res.json({ status: true, favorites, exploited });
+        return res.json({ status: true, favorites, exploited, saved });
     },
 
     // P01 : Ajouter aux favoris

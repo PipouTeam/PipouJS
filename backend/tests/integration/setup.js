@@ -61,6 +61,8 @@ const SCHEMA_SQL = `
             CHECK (status IN ('draft', 'pending', 'validated', 'suspended')),
         visibility VARCHAR(20) NOT NULL DEFAULT 'public'
             CHECK (visibility IN ('private', 'shared', 'public')),
+        media_url TEXT,
+        thumbnail_url TEXT,
         views INT NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -76,6 +78,16 @@ const SCHEMA_SQL = `
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE (user_id, resource_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS user_files (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        s3_key TEXT NOT NULL,
+        original_name VARCHAR(255),
+        mime_type VARCHAR(100),
+        size_bytes BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS comments (
@@ -113,7 +125,7 @@ async function createTestDatabase() {
 
 async function cleanTables(pool) {
     await pool.query(`
-        TRUNCATE comments, user_resources, resources, categories, relation_types, resource_types, users
+        TRUNCATE comments, user_resources, user_files, resources, categories, relation_types, resource_types, users
         RESTART IDENTITY CASCADE
     `);
 }
