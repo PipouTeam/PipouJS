@@ -1,7 +1,18 @@
 <template>
   <v-container class="mx-auto py-8" max-width="960">
 
-    <h1 class="text-h5 font-weight-bold text-primary mb-8">Mon compte</h1>
+    <div class="d-flex align-center justify-space-between mb-8">
+      <h1 class="text-h5 font-weight-bold text-primary">Mon compte</h1>
+      <v-btn
+        color="error"
+        variant="tonal"
+        rounded="sm"
+        prepend-icon="mdi-logout"
+        @click="handleLogout"
+      >
+        Déconnexion
+      </v-btn>
+    </div>
 
     <!-- ── 1. INFORMATIONS PERSONNELLES ─────────────────────────────────── -->
     <v-card variant="outlined" rounded="lg" class="mb-6">
@@ -219,10 +230,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
+const router    = useRouter()
+
+function handleLogout() {
+  authStore.logout()
+  router.push('/')
+}
 
 // ── Profil ───────────────────────────────────────────────────────────────────
 const profileFormRef  = ref(null)

@@ -1,7 +1,8 @@
 <template>
   <v-container class="mx-auto py-8" max-width="960">
 
-    <div class="d-flex align-center justify-space-between mb-6">
+    <!-- En-tête -->
+    <div class="d-flex flex-wrap align-start justify-space-between gap-3 mb-8">
       <div>
         <h1 class="text-h5 font-weight-bold text-primary">Mes ressources</h1>
         <p class="text-body-2 text-grey-darken-1 mt-1">Gérez les ressources que vous avez publiées.</p>
@@ -12,6 +13,7 @@
         rounded="sm"
         prepend-icon="mdi-plus"
         to="/creer"
+        class="mt-2"
       >
         Nouvelle ressource
       </v-btn>
@@ -34,42 +36,45 @@
       </v-btn>
     </div>
 
-    <!-- Tableau -->
-    <v-card v-else variant="outlined" rounded="lg">
-      <v-table>
-        <thead>
-          <tr>
-            <th class="text-left font-weight-bold">Titre</th>
-            <th class="text-left font-weight-bold">Type</th>
-            <th class="text-left font-weight-bold">Catégorie</th>
-            <th class="text-left font-weight-bold">Visibilité</th>
-            <th class="text-left font-weight-bold">Statut</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in resources" :key="r.id">
-            <td class="font-weight-medium">{{ r.title }}</td>
-            <td class="text-grey-darken-1">{{ r.resource_type || '—' }}</td>
-            <td class="text-grey-darken-1">{{ r.category || '—' }}</td>
-            <td>
+    <!-- Liste des ressources -->
+    <div v-else class="d-flex flex-column gap-3">
+      <v-card
+        v-for="r in resources"
+        :key="r.id"
+        variant="outlined"
+        rounded="lg"
+        class="pa-4"
+      >
+        <div class="d-flex align-start justify-space-between gap-2">
+
+          <!-- Infos -->
+          <div class="flex-grow-1 min-width-0">
+            <p class="font-weight-semibold text-body-1 text-truncate mb-2">{{ r.title }}</p>
+            <div class="d-flex flex-wrap gap-2">
+              <v-chip v-if="r.resource_type" size="x-small" variant="tonal" color="primary" rounded="sm">
+                {{ r.resource_type }}
+              </v-chip>
+              <v-chip v-if="r.category" size="x-small" variant="tonal" color="grey" rounded="sm">
+                {{ r.category }}
+              </v-chip>
               <v-chip size="x-small" :color="visibilityColor(r.visibility)" variant="tonal" rounded="sm">
                 {{ visibilityLabel(r.visibility) }}
               </v-chip>
-            </td>
-            <td>
               <v-chip size="x-small" :color="statusColor(r.status)" variant="tonal" rounded="sm">
                 {{ statusLabel(r.status) }}
               </v-chip>
-            </td>
-            <td class="text-right">
-              <v-btn icon="mdi-pencil-outline" size="small" variant="text" color="primary" />
-              <v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" @click="confirmDelete(r)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-card>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex gap-1 flex-shrink-0">
+            <v-btn icon="mdi-pencil-outline" size="small" variant="text" color="primary" />
+            <v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" @click="confirmDelete(r)" />
+          </div>
+
+        </div>
+      </v-card>
+    </div>
 
     <!-- Dialog confirmation suppression -->
     <v-dialog v-model="deleteDialog" max-width="400">
