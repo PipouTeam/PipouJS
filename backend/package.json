@@ -6,7 +6,9 @@
     "scripts": {
         "setup": "npm install && npm update",
         "start": "node src/server.js",
-        "test": "jest --forceExit"
+        "test": "jest --forceExit --testPathIgnorePatterns=integration",
+        "test:integration": "jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
+        "test:all": "jest --forceExit --runInBand"
     },
     "jest": {
         "testEnvironment": "node",
@@ -40,6 +42,7 @@
         "swagger-ui-express": "^5.0.1"
     },
     "devDependencies": {
-        "jest": "^30.3.0"
+        "jest": "^30.3.0",
+        "supertest": "^7.2.2"
     }
 }
