@@ -1,45 +1,59 @@
 <template>
   <v-container>
-
     <v-row>
       <Title :message="pageTitle" class="mb-6" />
+
       <SearchBar
-        :categories="categoryNames"
-        :relations="relationNames"
+        :categories="categories"
+        :relations="relationTypes"
+        :resource-types="resourceTypes"
         @filter="handleFilter"
       />
 
       <!-- Chargement -->
-      <v-col v-if="loading" cols="12" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="48" />
+      <v-col v-if="loading" cols="12" class="d-flex justify-center py-12">
+        <v-progress-circular indeterminate color="primary" />
       </v-col>
 
-      <!-- Erreur API -->
-      <v-col v-else-if="fetchError" cols="12">
-        <v-alert type="error" variant="tonal" rounded="lg">{{ fetchError }}</v-alert>
+      <!-- Erreur -->
+      <v-col v-else-if="error" cols="12">
+        <v-alert type="error" variant="tonal" rounded="sm">{{ error }}</v-alert>
       </v-col>
 
-      <!-- Liste vide -->
-      <v-col v-else-if="filteredRessources.length === 0" cols="12" class="text-center py-12">
-        <v-icon icon="mdi-file-search-outline" size="64" color="grey-lighten-1" />
+      <!-- Aucun résultat -->
+      <v-col v-else-if="resources.length === 0" cols="12" class="text-center py-12">
+        <v-icon icon="mdi-magnify" size="48" color="grey-lighten-1" />
         <p class="text-body-1 text-grey mt-4">Aucune ressource trouvée.</p>
       </v-col>
 
-      <!-- Cartes -->
+      <!-- Grille de ressources -->
       <v-col
-        v-for="(ressource, index) in filteredRessources"
-        :key="ressource.id"
+        v-else
+        v-for="r in resources"
+        :key="r.id"
         cols="12"
         sm="6"
         md="4"
       >
         <CatalogueCard
-          :id="ressource.id"
-          :titre="ressource.title"
-          :relation="ressource.relation_type || '—'"
-          :text="excerpt(ressource.content)"
-          :categorie="ressource.category || '—'"
-          :image="fallbackImages[index % fallbackImages.length]"
+          :id="r.id"
+          :titre="r.title"
+          :text="r.content"
+          :categorie="r.category || ''"
+          :relation="r.relation_type || ''"
+          :resource-type="r.resource_type || ''"
+          :thumbnail-url="r.thumbnail_url || ''"
+          :media-url="r.media_url || ''"
+        />
+      </v-col>
+
+      <!-- Pagination -->
+      <v-col v-if="totalPages > 1" cols="12" class="d-flex justify-center pt-4">
+        <v-pagination
+          v-model="page"
+          :length="totalPages"
+          rounded="sm"
+          @update:model-value="fetchResources"
         />
       </v-col>
     </v-row>
@@ -47,65 +61,68 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { api } from '@/services/api'
-import imgStress        from '@/assets/img/stress-1.jpg'
-import imgCommunication from '@/assets/img/communication.jpg'
-import imgLeadership    from '@/assets/img/leadership.jpg'
-import imgEcoute        from '@/assets/img/ecoute.jpg'
-import imgConflit       from '@/assets/img/conflit.jpg'
-import imgTutoring      from '@/assets/img/tutoring.jpg'
 
 const pageTitle = 'Catalogue des ressources'
 
-const fallbackImages = [imgStress, imgCommunication, imgLeadership, imgEcoute, imgConflit, imgTutoring]
+const resources     = ref([])
+const categories    = ref([])
+const relationTypes = ref([])
+const resourceTypes = ref([])
+const loading       = ref(false)
+const error         = ref('')
+const page          = ref(1)
+const totalPages    = ref(1)
 
-const loading    = ref(true)
-const fetchError = ref('')
-const ressources = ref([])
-
-const searchFilters = ref({ search: '', category: null, relation: null })
+const filters = ref({
+  search: '',
+  category_id: null,
+  relation_type_id: null,
+  resource_type_id: null,
+})
 
 onMounted(async () => {
   try {
-    const data = await api.get('/resources?limit=100')
-    ressources.value = data.resources ?? []
+    const [catData, relData, rtData] = await Promise.all([
+      api.get('/categories'),
+      api.get('/relation-types'),
+      api.get('/resource-types'),
+    ])
+    categories.value    = catData.categories ?? catData
+    relationTypes.value = relData.relation_types ?? relData
+    resourceTypes.value = rtData.resource_types ?? rtData
   } catch (e) {
-    fetchError.value = e.message || 'Impossible de charger les ressources.'
+    console.error('Erreur chargement filtres:', e)
+  }
+  fetchResources()
+})
+
+function handleFilter(f) {
+  filters.value = f
+  page.value = 1
+  fetchResources()
+}
+
+async function fetchResources() {
+  loading.value = true
+  error.value = ''
+  try {
+    const params = new URLSearchParams()
+    params.set('page', page.value)
+    params.set('limit', '12')
+    if (filters.value.search) params.set('search', filters.value.search)
+    if (filters.value.category_id) params.set('category_id', filters.value.category_id)
+    if (filters.value.relation_type_id) params.set('relation_type_id', filters.value.relation_type_id)
+    if (filters.value.resource_type_id) params.set('resource_type_id', filters.value.resource_type_id)
+
+    const data = await api.get(`/resources?${params}`)
+    resources.value  = data.resources
+    totalPages.value = data.pages
+  } catch (e) {
+    error.value = e.message
   } finally {
     loading.value = false
   }
-})
-
-const handleFilter = (filters) => {
-  searchFilters.value = filters
-}
-
-const categoryNames = computed(() => {
-  const names = ressources.value.map(r => r.category).filter(Boolean)
-  return [...new Set(names)].sort()
-})
-
-const relationNames = computed(() => {
-  const names = ressources.value.map(r => r.relation_type).filter(Boolean)
-  return [...new Set(names)].sort()
-})
-
-const filteredRessources = computed(() => {
-  return ressources.value.filter(r => {
-    const matchSearch = !searchFilters.value.search ||
-      r.title.toLowerCase().includes(searchFilters.value.search.toLowerCase()) ||
-      (r.content || '').toLowerCase().includes(searchFilters.value.search.toLowerCase())
-    const matchCategory = !searchFilters.value.category || r.category === searchFilters.value.category
-    const matchRelation = !searchFilters.value.relation || r.relation_type === searchFilters.value.relation
-    return matchSearch && matchCategory && matchRelation
-  })
-})
-
-function excerpt(text, maxLength = 120) {
-  if (!text) return ''
-  if (/youtube\.com|youtu\.be/.test(text)) return 'Contenu vidéo YouTube.'
-  if (/\/uploads\//.test(text) || text.startsWith('http')) return 'Document PDF.'
-  return text.length > maxLength ? text.slice(0, maxLength).trimEnd() + '…' : text
 }
 </script>

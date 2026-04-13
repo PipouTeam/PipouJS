@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS resources (
     visibility VARCHAR(20) NOT NULL DEFAULT 'public'
         CHECK (visibility IN ('private', 'shared', 'public')),
     media_url TEXT,
+    thumbnail_url TEXT,
     views INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -78,6 +79,17 @@ CREATE TABLE IF NOT EXISTS comments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Fichiers S3 : traçabilité utilisateur ↔ fichier (RGPD)
+CREATE TABLE IF NOT EXISTS user_files (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    s3_key TEXT NOT NULL,
+    original_name VARCHAR(255),
+    mime_type VARCHAR(100),
+    size_bytes BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Données par défaut
 INSERT INTO categories (name) VALUES
     ('Communication'), ('Parentalité'), ('Santé'), ('Bien-être'), ('Éducation'), ('Professionnel');
@@ -86,7 +98,9 @@ INSERT INTO relation_types (name) VALUES
     ('Soi'), ('Conjoints'), ('Famille'), ('Professionnel'), ('Amis'), ('Inconnus');
 
 INSERT INTO resource_types (name) VALUES
-    ('Article'), ('Vidéo'), ('Jeu'), ('Cours'), ('Carte défi'), ('Podcast');
+    ('Activité / Jeu à réaliser'), ('Article'), ('Carte défi'),
+    ('Cours au format PDF'), ('Exercice / Atelier'), ('Fiche de lecture'),
+    ('Jeu en ligne'), ('Vidéo');
 
 -- Comptes par défaut (mot de passe : Password123!)
 INSERT INTO users (email, password, first_name, last_name, role, is_active) VALUES

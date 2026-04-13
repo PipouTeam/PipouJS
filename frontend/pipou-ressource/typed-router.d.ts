@@ -19,16 +19,11 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/article': RouteRecordInfo<'/article', '/article', Record<never, never>, Record<never, never>, '/article/[id]'>,
-    '/article/[id]': RouteRecordInfo<'/article/[id]', '/article/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/catalogue': RouteRecordInfo<'/catalogue', '/catalogue', Record<never, never>, Record<never, never>>,
-    '/compte': RouteRecordInfo<'/compte', '/compte', Record<never, never>, Record<never, never>>,
     '/connexion': RouteRecordInfo<'/connexion', '/connexion', Record<never, never>, Record<never, never>>,
-    '/contact': RouteRecordInfo<'/contact', '/contact', Record<never, never>, Record<never, never>>,
     '/creer': RouteRecordInfo<'/creer', '/creer', Record<never, never>, Record<never, never>>,
-    '/faq': RouteRecordInfo<'/faq', '/faq', Record<never, never>, Record<never, never>>,
-    '/mentions': RouteRecordInfo<'/mentions', '/mentions', Record<never, never>, Record<never, never>>,
     '/mes-ressources': RouteRecordInfo<'/mes-ressources', '/mes-ressources', Record<never, never>, Record<never, never>>,
+    '/ressources/[id]': RouteRecordInfo<'/ressources/[id]', '/ressources/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
   }
 
   /**
@@ -46,44 +41,24 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/article.vue': {
-      routes: '/article' | '/article/[id]'
-      views: 'default'
-    }
-    'src/pages/article/[id].vue': {
-      routes: '/article/[id]'
-      views: never
-    }
     'src/pages/catalogue.vue': {
       routes: '/catalogue'
-      views: never
-    }
-    'src/pages/compte.vue': {
-      routes: '/compte'
       views: never
     }
     'src/pages/connexion.vue': {
       routes: '/connexion'
       views: never
     }
-    'src/pages/contact.vue': {
-      routes: '/contact'
-      views: never
-    }
     'src/pages/creer.vue': {
       routes: '/creer'
       views: never
     }
-    'src/pages/faq.vue': {
-      routes: '/faq'
-      views: never
-    }
-    'src/pages/mentions.vue': {
-      routes: '/mentions'
-      views: never
-    }
     'src/pages/mes-ressources.vue': {
       routes: '/mes-ressources'
+      views: never
+    }
+    'src/pages/ressources/[id].vue': {
+      routes: '/ressources/[id]'
       views: never
     }
   }
