@@ -20,8 +20,12 @@ declare module 'vue-router/auto-routes' {
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
     '/catalogue': RouteRecordInfo<'/catalogue', '/catalogue', Record<never, never>, Record<never, never>>,
+    '/compte': RouteRecordInfo<'/compte', '/compte', Record<never, never>, Record<never, never>>,
     '/connexion': RouteRecordInfo<'/connexion', '/connexion', Record<never, never>, Record<never, never>>,
+    '/contact': RouteRecordInfo<'/contact', '/contact', Record<never, never>, Record<never, never>>,
     '/creer': RouteRecordInfo<'/creer', '/creer', Record<never, never>, Record<never, never>>,
+    '/faq': RouteRecordInfo<'/faq', '/faq', Record<never, never>, Record<never, never>>,
+    '/mentions': RouteRecordInfo<'/mentions', '/mentions', Record<never, never>, Record<never, never>>,
     '/mes-ressources': RouteRecordInfo<'/mes-ressources', '/mes-ressources', Record<never, never>, Record<never, never>>,
     '/ressources/[id]': RouteRecordInfo<'/ressources/[id]', '/ressources/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
   }
@@ -45,12 +49,28 @@ declare module 'vue-router/auto-routes' {
       routes: '/catalogue'
       views: never
     }
+    'src/pages/compte.vue': {
+      routes: '/compte'
+      views: never
+    }
     'src/pages/connexion.vue': {
       routes: '/connexion'
       views: never
     }
+    'src/pages/contact.vue': {
+      routes: '/contact'
+      views: never
+    }
     'src/pages/creer.vue': {
       routes: '/creer'
+      views: never
+    }
+    'src/pages/faq.vue': {
+      routes: '/faq'
+      views: never
+    }
+    'src/pages/mentions.vue': {
+      routes: '/mentions'
       views: never
     }
     'src/pages/mes-ressources.vue': {
