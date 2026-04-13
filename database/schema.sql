@@ -86,3 +86,11 @@ INSERT INTO relation_types (name) VALUES
 
 INSERT INTO resource_types (name) VALUES
     ('Article'), ('Vidéo'), ('Jeu'), ('Cours'), ('Carte défi'), ('Podcast');
+
+-- Utilisateurs de test
+-- Admin: admin@mail.com / admin123
+-- User: user@mail.com / user123
+INSERT INTO users (email, password, first_name, last_name, role, is_active) VALUES
+    ('admin@mail.com', '$2b$12$lNTZs3/R.DQN3uW6Kllc/ObneV3bZaMq09W6K9cJmP08D4dEaXG7G', 'Admin', 'User', 'admin', TRUE),
+    ('user@mail.com', '$2b$12$b/hBw.EFxh2Yrq6aViuGP.x2e4ZgLLhzSLsYdWG1Zih6pTNq8Zmze', 'Test', 'User', 'citizen', TRUE);
+
