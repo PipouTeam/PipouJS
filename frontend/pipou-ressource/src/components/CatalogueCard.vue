@@ -43,7 +43,7 @@
           color="#00008B"
           size="large"
           class="font-weight-bold"
-          to="/article"
+          :to="`/article/${id}`"
         ></v-btn>
       </div>
     </v-card-text>
@@ -52,6 +52,10 @@
 
 <script setup>
 const props = defineProps({
+  id: {
+    type: [String, Number],
+    required: true
+  },
   image: {
     type: String,
     default: 'https://via.placeholder.com/450x250'

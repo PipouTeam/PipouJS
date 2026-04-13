@@ -99,8 +99,9 @@
           mandatory
           class="mb-5"
         >
-          <v-btn value="pdf" prepend-icon="mdi-file-pdf-box">PDF</v-btn>
+          <v-btn value="pdf"     prepend-icon="mdi-file-pdf-box">PDF</v-btn>
           <v-btn value="youtube" prepend-icon="mdi-youtube">Vidéo YouTube</v-btn>
+          <v-btn value="text"    prepend-icon="mdi-text-long">Texte</v-btn>
         </v-btn-toggle>
 
         <!-- Upload PDF -->
@@ -130,6 +131,21 @@
             Fichier prêt : {{ uploadedFileName }}
           </v-alert>
           <v-progress-linear v-if="uploading" indeterminate color="primary" class="mt-2" rounded />
+        </div>
+
+        <!-- Texte libre -->
+        <div v-else-if="contentType === 'text'">
+          <v-textarea
+            v-model="form.content"
+            label="Contenu textuel"
+            prepend-inner-icon="mdi-text-long"
+            variant="outlined"
+            rows="10"
+            auto-grow
+            counter
+            placeholder="Rédigez ici le contenu de votre ressource..."
+            :rules="[v => !!v?.trim() || 'Le contenu est obligatoire.']"
+          />
         </div>
 
         <!-- URL YouTube -->
@@ -225,6 +241,12 @@ const pdfFile        = ref([])
 const uploadedUrl    = ref('')
 const uploadedFileName = ref('')
 const uploading      = ref(false)
+
+watch(contentType, () => {
+  form.value.content = ''
+  uploadedUrl.value  = ''
+  pdfFile.value      = []
+})
 
 async function onFileChange(files) {
   const file = files?.[0]

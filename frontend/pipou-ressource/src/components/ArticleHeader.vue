@@ -25,6 +25,7 @@
       </v-chip>
 
       <v-chip
+        v-if="minAge"
         color="secondary"
         variant="tonal"
         prepend-icon="mdi-account-child-outline"
@@ -37,9 +38,12 @@
     <v-divider class="mb-6 border-opacity-25" />
 
     <!-- Description -->
-    <p class="text-body-1 text-grey-darken-3" style="max-width: 72ch; line-height: 1.75">
+    <p class="text-body-1 text-grey-darken-3 mb-6" style="max-width: 72ch; line-height: 1.75">
       {{ description }}
     </p>
+
+    <!-- Actions (slot pour boutons externes ex: favoris) -->
+    <slot name="actions" />
 
   </v-container>
 </template>
@@ -48,7 +52,7 @@
 defineProps({
   title:       { type: String, default: "Nom de l'article" },
   contentType: { type: String, default: 'Document' },
-  minAge:      { type: Number, default: 6 },
+  minAge:      { type: Number, default: null },
   description: { type: String, default: "Description de l'article." },
 })
 

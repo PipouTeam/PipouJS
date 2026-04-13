@@ -3,25 +3,43 @@
 
     <v-row>
       <Title :message="pageTitle" class="mb-6" />
-      <SearchBar 
-        :categories="categories"
-        :relations="relations"
+      <SearchBar
+        :categories="categoryNames"
+        :relations="relationNames"
         @filter="handleFilter"
       />
 
-      <v-col 
-        v-for="(ressource, index) in filteredRessources" 
-        :key="index"
-        cols="12" 
-        sm="6" 
+      <!-- Chargement -->
+      <v-col v-if="loading" cols="12" class="text-center py-12">
+        <v-progress-circular indeterminate color="primary" size="48" />
+      </v-col>
+
+      <!-- Erreur API -->
+      <v-col v-else-if="fetchError" cols="12">
+        <v-alert type="error" variant="tonal" rounded="lg">{{ fetchError }}</v-alert>
+      </v-col>
+
+      <!-- Liste vide -->
+      <v-col v-else-if="filteredRessources.length === 0" cols="12" class="text-center py-12">
+        <v-icon icon="mdi-file-search-outline" size="64" color="grey-lighten-1" />
+        <p class="text-body-1 text-grey mt-4">Aucune ressource trouvée.</p>
+      </v-col>
+
+      <!-- Cartes -->
+      <v-col
+        v-for="(ressource, index) in filteredRessources"
+        :key="ressource.id"
+        cols="12"
+        sm="6"
         md="4"
       >
-        <CatalogueCard 
-          :titre="ressource.titre"
-          :relation="ressource.relation"
-          :text="ressource.text"
-          :categorie="ressource.categorie"
-          :image="ressource.image"
+        <CatalogueCard
+          :id="ressource.id"
+          :titre="ressource.title"
+          :relation="ressource.relation_type || '—'"
+          :text="excerpt(ressource.content)"
+          :categorie="ressource.category || '—'"
+          :image="fallbackImages[index % fallbackImages.length]"
         />
       </v-col>
     </v-row>
@@ -29,7 +47,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue'
+import { api } from '@/services/api'
 import imgStress        from '@/assets/img/stress-1.jpg'
 import imgCommunication from '@/assets/img/communication.jpg'
 import imgLeadership    from '@/assets/img/leadership.jpg'
@@ -37,94 +56,56 @@ import imgEcoute        from '@/assets/img/ecoute.jpg'
 import imgConflit       from '@/assets/img/conflit.jpg'
 import imgTutoring      from '@/assets/img/tutoring.jpg'
 
-const pageTitle = "Catalogue des ressources";
+const pageTitle = 'Catalogue des ressources'
 
-// Données moquées
-const ressources = ref([
-  {
-    titre: "Gérer son stress au travail",
-    relation: "Professionnelle",
-    text: "Apprenez les techniques de respiration et d'organisation pour mieux vivre votre quotidien.",
-    categorie: "Bien-être",
-    image: imgStress
-  },
-  {
-    titre: "Communication non-violente",
-    relation: "Personnelle",
-    text: "Améliorez vos échanges avec vos proches grâce à la méthode CNV.",
-    categorie: "Communication",
-    image: imgCommunication
-  },
-  {
-    titre: "Leadership Bienveillant",
-    relation: "Professionnelle",
-    text: "Comment motiver ses équipes en restant à l'écoute de leurs besoins.",
-    categorie: "Management",
-    image: imgLeadership
-  },
-  {
-    titre: "L'art de l'écoute",
-    relation: "Sociale",
-    text: "Être présent pour l'autre sans juger, un pilier de la relation humaine.",
-    categorie: "Empathie",
-    image: imgEcoute
-  },
-  {
-    titre: "Conflits de voisinage",
-    relation: "Citoyenne",
-    text: "Des pistes concrètes pour désamorcer les tensions du quotidien.",
-    categorie: "Médiation",
-    image: imgConflit
-  },
-  {
-    titre: "Le tutorat en entreprise",
-    relation: "Professionnelle",
-    text: "Transmettre ses compétences efficacement aux nouveaux arrivants.",
-    categorie: "Formation",
-    image: imgTutoring
+const fallbackImages = [imgStress, imgCommunication, imgLeadership, imgEcoute, imgConflit, imgTutoring]
+
+const loading    = ref(true)
+const fetchError = ref('')
+const ressources = ref([])
+
+const searchFilters = ref({ search: '', category: null, relation: null })
+
+onMounted(async () => {
+  try {
+    const data = await api.get('/resources?limit=100')
+    ressources.value = data.resources ?? []
+  } catch (e) {
+    fetchError.value = e.message || 'Impossible de charger les ressources.'
+  } finally {
+    loading.value = false
   }
-]);
-
-const searchFilters = ref({
-  search: '',
-  category: null,
-  relation: null
-});
+})
 
 const handleFilter = (filters) => {
-  searchFilters.value = filters;
-};
+  searchFilters.value = filters
+}
 
-const categories = computed(() => {
-  const cats = ressources.value.map(r => r.categorie);
-  return [...new Set(cats)].filter(Boolean).sort();
-});
+const categoryNames = computed(() => {
+  const names = ressources.value.map(r => r.category).filter(Boolean)
+  return [...new Set(names)].sort()
+})
 
-const relations = computed(() => {
-  const rels = ressources.value.map(r => r.relation);
-  return [...new Set(rels)].filter(Boolean).sort();
-});
+const relationNames = computed(() => {
+  const names = ressources.value.map(r => r.relation_type).filter(Boolean)
+  return [...new Set(names)].sort()
+})
 
 const filteredRessources = computed(() => {
-  return ressources.value.filter(ressource => {
-    let matchSearch = true;
-    if (searchFilters.value.search) {
-      const searchLower = searchFilters.value.search.toLowerCase();
-      matchSearch = ressource.titre.toLowerCase().includes(searchLower) || 
-                    ressource.text.toLowerCase().includes(searchLower);
-    }
-    
-    let matchCategory = true;
-    if (searchFilters.value.category) {
-      matchCategory = ressource.categorie === searchFilters.value.category;
-    }
+  return ressources.value.filter(r => {
+    const matchSearch = !searchFilters.value.search ||
+      r.title.toLowerCase().includes(searchFilters.value.search.toLowerCase()) ||
+      (r.content || '').toLowerCase().includes(searchFilters.value.search.toLowerCase())
+    const matchCategory = !searchFilters.value.category || r.category === searchFilters.value.category
+    const matchRelation = !searchFilters.value.relation || r.relation_type === searchFilters.value.relation
+    return matchSearch && matchCategory && matchRelation
+  })
+})
 
-    let matchRelation = true;
-    if (searchFilters.value.relation) {
-      matchRelation = ressource.relation === searchFilters.value.relation;
-    }
-
-    return matchSearch && matchCategory && matchRelation;
-  });
-});
+function excerpt(text, maxLength = 120) {
+  if (!text) return ''
+  if (/youtube\.com|youtu\.be/.test(text)) return 'Contenu vidéo YouTube.'
+  if (/\/uploads\//.test(text) || text.startsWith('http')) return 'Document PDF.'
+  return text.length > maxLength ? text.slice(0, maxLength).trimEnd() + '…' : text
+}
 </script>
