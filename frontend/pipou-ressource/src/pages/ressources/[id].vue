@@ -36,6 +36,32 @@
         </v-chip>
       </div>
 
+      <!-- Actions utilisateur -->
+      <div v-if="isLoggedIn" class="d-flex ga-3 mb-6">
+        <v-btn
+          :color="isFavorite ? 'error' : 'default'"
+          :variant="isFavorite ? 'tonal' : 'outlined'"
+          :prepend-icon="isFavorite ? 'mdi-heart' : 'mdi-heart-outline'"
+          rounded="sm"
+          size="small"
+          :loading="favLoading"
+          @click="toggleFavorite"
+        >
+          {{ isFavorite ? 'Favori' : 'Ajouter aux favoris' }}
+        </v-btn>
+        <v-btn
+          :color="isSaved ? 'info' : 'default'"
+          :variant="isSaved ? 'tonal' : 'outlined'"
+          :prepend-icon="isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+          rounded="sm"
+          size="small"
+          :loading="savedLoading"
+          @click="toggleSaved"
+        >
+          {{ isSaved ? 'Mis de côté' : 'Mettre de côté' }}
+        </v-btn>
+      </div>
+
       <!-- ============ RENDU PAR TYPE ============ -->
 
       <!-- PDF (Cours au format PDF) -->
@@ -125,16 +151,57 @@ const resource = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
+// Auth & progress state
+const isLoggedIn  = !!localStorage.getItem('token')
+const isFavorite  = ref(false)
+const isSaved     = ref(false)
+const favLoading  = ref(false)
+const savedLoading = ref(false)
+
 onMounted(async () => {
   try {
     const data = await api.get(`/resources/${route.params.id}`)
     resource.value = data.resource
+
+    // Charger l'état favori/sauvegardé si connecté
+    if (isLoggedIn) {
+      try {
+        const dashboard = await api.get('/progress/dashboard', true)
+        const rid = resource.value.id
+        isFavorite.value = dashboard.favorites?.some(f => f.id === rid) ?? false
+        isSaved.value    = dashboard.saved?.some(s => s.id === rid) ?? false
+      } catch {}
+    }
   } catch (e) {
     error.value = e.message
   } finally {
     loading.value = false
   }
 })
+
+async function toggleFavorite() {
+  favLoading.value = true
+  try {
+    if (isFavorite.value) {
+      await api.delete(`/progress/favorites/${resource.value.id}`, true)
+    } else {
+      await api.post(`/progress/favorites/${resource.value.id}`, null, true)
+    }
+    isFavorite.value = !isFavorite.value
+  } catch {} finally { favLoading.value = false }
+}
+
+async function toggleSaved() {
+  savedLoading.value = true
+  try {
+    if (isSaved.value) {
+      await api.delete(`/progress/saved/${resource.value.id}`, true)
+    } else {
+      await api.post(`/progress/saved/${resource.value.id}`, null, true)
+    }
+    isSaved.value = !isSaved.value
+  } catch {} finally { savedLoading.value = false }
+}
 
 const displayMode = computed(() => {
   const type = resource.value?.resource_type
