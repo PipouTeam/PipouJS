@@ -1,0 +1,8 @@
+{
+  "name": "pipoujs",
+  "private": true,
+  "scripts": {
+    "install": "cd ${CC_APP_FOLDER:-.} && npm install",
+    "start": "cd ${CC_APP_FOLDER:-.} && npm start"
+  }
+}
