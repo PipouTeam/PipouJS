@@ -6,7 +6,13 @@
       Ressources à la une
     </h2>
 
+    <!-- Chargement -->
+    <div v-if="loading" class="d-flex justify-center py-12">
+      <v-progress-circular indeterminate color="primary" />
+    </div>
+
     <v-carousel
+      v-else-if="resources.length"
       height="420"
       show-arrows="hover"
       cycle
@@ -15,8 +21,8 @@
       color="primary"
     >
       <v-carousel-item
-        v-for="article in featuredArticles"
-        :key="article.id"
+        v-for="r in resources"
+        :key="r.id"
         class="h-100"
       >
         <v-card class="h-100 overflow-hidden" rounded="lg" elevation="2">
@@ -24,7 +30,10 @@
 
             <!-- Image -->
             <v-col cols="5" class="d-none d-md-flex">
-              <v-img :src="article.image" cover height="100%" />
+              <v-img v-if="r.thumbnail_url" :src="r.thumbnail_url" cover height="100%" />
+              <div v-else class="w-100 h-100 d-flex align-center justify-center" :style="`background: ${typeColor(r.resource_type)}`">
+                <v-icon :icon="typeIcon(r.resource_type)" size="64" color="white" />
+              </div>
             </v-col>
 
             <!-- Contenu -->
@@ -38,15 +47,15 @@
                 class="mb-3 align-self-start"
                 prepend-icon="mdi-tag-outline"
               >
-                {{ article.contentType }}
+                {{ r.resource_type }}
               </v-chip>
 
               <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-3" style="line-height: 1.3">
-                {{ article.title }}
+                {{ r.title }}
               </h3>
 
               <p class="text-body-2 text-grey-darken-1 mb-5" style="line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden">
-                {{ article.description }}
+                {{ plainText(r.content) }}
               </p>
 
               <div>
@@ -55,7 +64,7 @@
                   variant="flat"
                   rounded="sm"
                   append-icon="mdi-arrow-right"
-                  :to="'/article'"
+                  :to="`/ressources/${r.id}`"
                 >
                   Découvrir
                 </v-btn>
@@ -71,34 +80,47 @@
 </template>
 
 <script setup>
-import imgCommunication from '@/assets/img/communication.jpg'
-import imgConflit      from '@/assets/img/conflit.jpg'
-import imgEcoute       from '@/assets/img/ecoute.jpg'
-import imgLeadership   from '@/assets/img/leadership.jpg'
-import imgStress       from '@/assets/img/stress-1.jpg'
-import imgTutoring     from '@/assets/img/tutoring.jpg'
+import { ref, onMounted } from 'vue'
+import { api } from '@/services/api'
 
-const featuredArticles = [
-  {
-    id: 1,
-    title: 'Améliorer sa communication au quotidien',
-    contentType: 'Vidéo pédagogique',
-    description: "Découvrez les clés d'une communication bienveillante et efficace dans vos relations personnelles et professionnelles. Des outils concrets pour mieux s'exprimer et être compris.",
-    image: imgCommunication,
-  },
-  {
-    id: 2,
-    title: 'Gérer le stress et prévenir l\'épuisement',
-    contentType: 'Document PDF',
-    description: "Un guide pratique pour identifier les sources de stress, comprendre ses mécanismes et adopter des stratégies durables pour préserver son équilibre mental et physique.",
-    image: imgStress,
-  },
-  {
-    id: 3,
-    title: "L'écoute active : fondement de la relation d'aide",
-    contentType: 'Fiche pratique',
-    description: "Apprenez les techniques de l'écoute active pour mieux accompagner les personnes en difficulté. Une compétence essentielle pour les professionnels du soin et de l'éducation.",
-    image: imgEcoute,
-  },
-]
+const resources = ref([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const data = await api.get('/resources?limit=5&sort=created_at')
+    resources.value = data.resources ?? []
+  } catch (e) {
+    console.error('Erreur chargement ressources à la une:', e)
+  } finally {
+    loading.value = false
+  }
+})
+
+const plainText = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+const typeIcon = (type) => ({
+  'Article': 'mdi-text-box-outline',
+  'Fiche de lecture': 'mdi-book-open-page-variant-outline',
+  'Cours au format PDF': 'mdi-file-pdf-box',
+  'Vidéo': 'mdi-play-circle-outline',
+  'Carte défi': 'mdi-lightning-bolt',
+  'Exercice / Atelier': 'mdi-pencil-ruler',
+  'Activité / Jeu à réaliser': 'mdi-puzzle-outline',
+  'Jeu en ligne': 'mdi-gamepad-variant-outline',
+}[type] || 'mdi-file-outline')
+
+const typeColor = (type) => ({
+  'Article': '#4A90D9',
+  'Fiche de lecture': '#2C3E50',
+  'Cours au format PDF': '#27AE60',
+  'Vidéo': '#8E44AD',
+  'Carte défi': '#E67E22',
+  'Exercice / Atelier': '#16A085',
+  'Activité / Jeu à réaliser': '#D35400',
+  'Jeu en ligne': '#C0392B',
+}[type] || '#95A5A6')
 </script>
