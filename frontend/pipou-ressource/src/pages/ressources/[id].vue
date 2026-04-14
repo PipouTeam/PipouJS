@@ -15,6 +15,8 @@
     <ArticleHeader
       :title="resource.title"
       :content-type="resource.resource_type || 'Ressource'"
+      :parent-title="parentBreadcrumb.title"
+      :parent-to="parentBreadcrumb.to"
       description=""
     />
 
@@ -60,7 +62,44 @@
         >
           {{ isSaved ? 'Mis de côté' : 'Mettre de côté' }}
         </v-btn>
+        <v-btn
+          v-if="resource.share_token"
+          color="default"
+          variant="outlined"
+          prepend-icon="mdi-share-variant-outline"
+          rounded="sm"
+          size="small"
+          @click="shareDialog = true"
+        >
+          Partager
+        </v-btn>
       </div>
+
+      <!-- Dialog de partage -->
+      <v-dialog v-model="shareDialog" max-width="500">
+        <v-card rounded="lg" class="pa-2">
+          <v-card-title class="text-h6 font-weight-bold pt-4 px-4">Partager cette ressource</v-card-title>
+          <v-card-text class="px-4">
+            <p class="text-body-2 text-grey-darken-1 mb-3">Copiez ce lien pour partager la ressource. Toute personne disposant du lien pourra y accéder.</p>
+            <v-text-field
+              :model-value="shareUrl"
+              readonly
+              variant="outlined"
+              density="compact"
+              hide-details
+              append-inner-icon="mdi-content-copy"
+              @click:append-inner="copyShareLink"
+            />
+            <v-alert v-if="linkCopied" type="success" variant="tonal" density="compact" rounded="sm" class="mt-3" prepend-icon="mdi-check">
+              Lien copié !
+            </v-alert>
+          </v-card-text>
+          <v-card-actions class="pa-4 pt-0">
+            <v-spacer />
+            <v-btn variant="text" @click="shareDialog = false">Fermer</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <!-- ============ RENDU PAR TYPE ============ -->
 
@@ -143,10 +182,20 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/services/api'
 
 const route = useRoute()
+const router = useRouter()
+
+// Breadcrumb parent basé sur la page d'origine
+const parentBreadcrumb = computed(() => {
+  const from = router.options.history.state?.back || ''
+  if (typeof from === 'string' && from.startsWith('/mes-ressources')) {
+    return { title: 'Mes ressources', to: '/mes-ressources' }
+  }
+  return { title: 'Catalogue', to: '/catalogue' }
+})
 const resource = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -160,7 +209,7 @@ const savedLoading = ref(false)
 
 onMounted(async () => {
   try {
-    const data = await api.get(`/resources/${route.params.id}`)
+    const data = await api.get(`/resources/${route.params.id}`, isLoggedIn)
     resource.value = data.resource
 
     // Charger l'état favori/sauvegardé si connecté
@@ -201,6 +250,23 @@ async function toggleSaved() {
     }
     isSaved.value = !isSaved.value
   } catch {} finally { savedLoading.value = false }
+}
+
+// --- Partage ---
+const shareDialog = ref(false)
+const linkCopied  = ref(false)
+
+const shareUrl = computed(() => {
+  if (!resource.value?.share_token) return ''
+  return `${window.location.origin}/ressources/${resource.value.id}?token=${resource.value.share_token}`
+})
+
+async function copyShareLink() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    linkCopied.value = true
+    setTimeout(() => { linkCopied.value = false }, 2000)
+  } catch {}
 }
 
 const displayMode = computed(() => {

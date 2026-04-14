@@ -3,10 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.pipou.ressource',
   appName: 'Pipou Ressource',
-  webDir: 'dist',
-  server: {
-    androidScheme: 'https'
-  }
+  webDir: 'dist'
 };
 
 export default config;

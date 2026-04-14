@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const hasKeys = require('has-keys');
 const db = require('../models/database');
 
@@ -10,7 +11,7 @@ const RESOURCE_JOINS = `
 `;
 
 const RESOURCE_FIELDS = `
-    r.id, r.title, r.content, r.media_url, r.thumbnail_url, r.status, r.visibility, r.views, r.created_at, r.updated_at,
+    r.id, r.title, r.content, r.media_url, r.thumbnail_url, r.share_token, r.status, r.visibility, r.views, r.created_at, r.updated_at,
     c.name AS category, c.id AS category_id,
     rt.name AS relation_type, rt.id AS relation_type_id,
     rtype.name AS resource_type, rtype.id AS resource_type_id,
@@ -32,12 +33,9 @@ module.exports = {
         const values = [];
         let i = 1;
 
-        // Visibilité selon l'utilisateur connecté ou non (R01, R06)
-        if (req.user) {
-            conditions.push(`(r.visibility = 'public' OR r.visibility = 'shared')`);
-        } else {
-            conditions.push(`r.visibility = 'public'`);
-        }
+        // Le catalogue ne montre que les ressources publiques validées
+        // Les ressources "shared" ne sont accessibles que par lien direct (getOne)
+        conditions.push(`r.visibility = 'public'`);
         conditions.push(`r.status = 'validated'`);
 
         if (category_id) { conditions.push(`r.category_id = $${i++}`); values.push(category_id); }
@@ -74,7 +72,7 @@ module.exports = {
             total,
             page: parseInt(page),
             pages: Math.ceil(total / parseInt(limit)),
-            resources: result.rows,
+            resources: result.rows.map(r => { delete r.share_token; return r; }),
         });
     },
 
@@ -95,16 +93,24 @@ module.exports = {
         // Vérification visibilité
         const isPublic = resource.visibility === 'public' && resource.status === 'validated';
         const isShared = resource.visibility === 'shared' && resource.status === 'validated' && req.user;
+        const isSharedViaToken = resource.visibility === 'shared'
+            && resource.status === 'validated'
+            && req.query.token && req.query.token === resource.share_token;
         const isOwner = req.user && req.user.id === resource.author_id;
         const isAdmin = req.user && ['admin', 'super_admin'].includes(req.user.role);
 
-        if (!isPublic && !isShared && !isOwner && !isAdmin) {
+        if (!isPublic && !isShared && !isSharedViaToken && !isOwner && !isAdmin) {
             return res.status(403).json({ status: false, message: 'Accès refusé' });
         }
 
-        // Incrémenter les vues pour les ressources publiques
-        if (isPublic || isShared) {
+        // Incrémenter les vues
+        if (isPublic || isShared || isSharedViaToken) {
             await db.query('UPDATE resources SET views = views + 1 WHERE id = $1', [id]);
+        }
+
+        // Ne pas exposer le share_token sauf au propriétaire/admin
+        if (!isOwner && !isAdmin) {
+            delete resource.share_token;
         }
 
         return res.json({ status: true, resource });
@@ -128,13 +134,13 @@ module.exports = {
         const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility = 'public' } = req.body;
 
         const isAdmin = ['admin', 'super_admin'].includes(req.user.role);
-        // Si citoyen publie publiquement → en attente de modération
         const status = (!isAdmin && visibility === 'public') ? 'pending' : 'validated';
+        const share_token = crypto.randomUUID();
 
         const result = await db.query(
-            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
+            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility, share_token)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility, share_token]
         );
 
         return res.status(201).json({ status: true, message: 'Ressource créée', id: result.rows[0].id });
@@ -248,10 +254,12 @@ module.exports = {
         }
         const { title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, visibility = 'public', status = 'validated' } = req.body;
 
+        const share_token = crypto.randomUUID();
+
         const result = await db.query(
-            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility]
+            `INSERT INTO resources (title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, author_id, status, visibility, share_token)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+            [title, content, media_url, thumbnail_url, category_id, relation_type_id, resource_type_id, req.user.id, status, visibility, share_token]
         );
 
         return res.status(201).json({ status: true, message: 'Ressource créée', id: result.rows[0].id });

@@ -11,5 +11,6 @@ router.use('/api/relation-types', require('./relationTypeRoutes'));
 router.use('/api/resource-types', require('./resourceTypeRoutes'));
 router.use('/api/progress', require('./progressRoutes'));
 router.use('/api/upload',  require('./uploadRoutes'));
+router.use('/api/stats',   require('./statsRoutes'));
 
 module.exports = router;

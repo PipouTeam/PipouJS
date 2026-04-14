@@ -1,0 +1,9 @@
+{
+  "root": "/dist",
+  "rewrite_rules": [
+    {
+      "from": "^(?!.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot|json|webp|pdf)).*$",
+      "to": "/index.html"
+    }
+  ]
+}

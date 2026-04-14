@@ -30,13 +30,14 @@ describe('list (public)', () => {
         expect(sqlCall).toContain("r.status = 'validated'");
     });
 
-    it('filtre public OR shared si connecté', async () => {
+    it('filtre uniquement public même si connecté (shared = lien direct)', async () => {
         mockListQueries();
         const req = { query: {}, user: { id: 1, role: 'citizen' } };
         const res = mockRes();
         await resourceController.list(req, res);
         const sqlCall = db.query.mock.calls[0][0];
-        expect(sqlCall).toContain("r.visibility = 'shared'");
+        expect(sqlCall).toContain("r.visibility = 'public'");
+        expect(sqlCall).not.toContain("r.visibility = 'shared'");
     });
 
     it('retourne une réponse paginée', async () => {

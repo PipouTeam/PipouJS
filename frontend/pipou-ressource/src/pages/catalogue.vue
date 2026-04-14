@@ -27,23 +27,17 @@
       </v-col>
 
       <!-- Grille de ressources -->
-      <v-col
-        v-else
-        v-for="r in resources"
-        :key="r.id"
-        cols="12"
-        sm="6"
-        md="4"
-      >
-        <CatalogueCard
-          :id="r.id"
-          :titre="r.title"
-          :text="r.content"
-          :categorie="r.category || ''"
-          :relation="r.relation_type || ''"
-          :resource-type="r.resource_type || ''"
-          :thumbnail-url="r.thumbnail_url || ''"
-          :media-url="r.media_url || ''"
+      <v-col v-else cols="12">
+        <ResourceList
+          :items="resources"
+          view="grid"
+          show-excerpt
+          show-relation
+          :show-progress="isLoggedIn"
+          :favorite-ids="favoriteIds"
+          :saved-ids="savedIds"
+          @toggle-favorite="toggleFavorite"
+          @toggle-saved="toggleSaved"
         />
       </v-col>
 
@@ -61,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { api } from '@/services/api'
 
 const pageTitle = 'Catalogue des ressources'
@@ -70,10 +64,16 @@ const resources     = ref([])
 const categories    = ref([])
 const relationTypes = ref([])
 const resourceTypes = ref([])
+const favorites     = ref([])
+const saved         = ref([])
 const loading       = ref(false)
 const error         = ref('')
 const page          = ref(1)
 const totalPages    = ref(1)
+const isLoggedIn    = !!localStorage.getItem('token')
+
+const favoriteIds = computed(() => new Set(favorites.value.map(f => f.id)))
+const savedIds    = computed(() => new Set(saved.value.map(s => s.id)))
 
 const filters = ref({
   search: '',
@@ -92,6 +92,11 @@ onMounted(async () => {
     categories.value    = catData.categories ?? catData
     relationTypes.value = relData.relation_types ?? relData
     resourceTypes.value = rtData.resource_types ?? rtData
+    if (isLoggedIn) {
+      const dashboard = await api.get('/progress/dashboard', true)
+      favorites.value = dashboard.favorites ?? []
+      saved.value     = dashboard.saved ?? []
+    }
   } catch (e) {
     console.error('Erreur chargement filtres:', e)
   }
@@ -102,6 +107,32 @@ function handleFilter(f) {
   filters.value = f
   page.value = 1
   fetchResources()
+}
+
+async function toggleFavorite(resourceId) {
+  try {
+    if (favoriteIds.value.has(resourceId)) {
+      await api.delete(`/progress/favorites/${resourceId}`, true)
+      favorites.value = favorites.value.filter(f => f.id !== resourceId)
+    } else {
+      await api.post(`/progress/favorites/${resourceId}`, null, true)
+      const r = resources.value.find(r => r.id === resourceId)
+      if (r) favorites.value.push(r)
+    }
+  } catch {}
+}
+
+async function toggleSaved(resourceId) {
+  try {
+    if (savedIds.value.has(resourceId)) {
+      await api.delete(`/progress/saved/${resourceId}`, true)
+      saved.value = saved.value.filter(s => s.id !== resourceId)
+    } else {
+      await api.post(`/progress/saved/${resourceId}`, null, true)
+      const r = resources.value.find(r => r.id === resourceId)
+      if (r) saved.value.push(r)
+    }
+  } catch {}
 }
 
 async function fetchResources() {
@@ -116,7 +147,8 @@ async function fetchResources() {
     if (filters.value.relation_type_id) params.set('relation_type_id', filters.value.relation_type_id)
     if (filters.value.resource_type_id) params.set('resource_type_id', filters.value.resource_type_id)
 
-    const data = await api.get(`/resources?${params}`)
+    const auth = !!localStorage.getItem('token')
+    const data = await api.get(`/resources?${params}`, auth)
     resources.value  = data.resources
     totalPages.value = data.pages
   } catch (e) {

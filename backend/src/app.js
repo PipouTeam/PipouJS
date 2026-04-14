@@ -18,12 +18,8 @@ const swaggerSpec = require('./swagger');
 
 // Load .env Enviroment Variables to process.env
 
+// Variables toujours obligatoires
 require('mandatoryenv').load([
-    'DB_HOST',
-    'DB_PORT',
-    'DB_DATABASE',
-    'DB_USER',
-    'DB_PASSWORD',
     'PORT',
     'SECRET',
     'S3_ENDPOINT',
@@ -31,6 +27,17 @@ require('mandatoryenv').load([
     'S3_SECRET_KEY',
     'S3_BUCKET',
 ]);
+
+// En local : variables DB individuelles. Sur Clever Cloud : POSTGRESQL_ADDON_URI fournie par l'add-on
+if (!process.env.POSTGRESQL_ADDON_URI) {
+    require('mandatoryenv').load([
+        'DB_HOST',
+        'DB_PORT',
+        'DB_DATABASE',
+        'DB_USER',
+        'DB_PASSWORD',
+    ]);
+}
 
 
 // Instantiate an Express Application
@@ -45,8 +52,21 @@ app.use(express.urlencoded( { extended: true, limit: '10mb' } ));
 app.use(logger.dev, logger.combined);
 
 app.use(cookieParser());
+
+// CORS — supporte plusieurs origines (FRONTEND_URL, BACKOFFICE_URL, CORS_EXTRA_ORIGINS)
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.BACKOFFICE_URL,
+    ...(process.env.CORS_EXTRA_ORIGINS ? process.env.CORS_EXTRA_ORIGINS.split(',') : []),
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        // Autorise les requêtes sans origin (curl, mobile, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 // Swagger — helmet désactivé sur cette route pour autoriser les assets UI

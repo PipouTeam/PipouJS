@@ -1,0 +1,28 @@
+{
+  "apps": [
+    {
+      "app_id": "app_2cab94c0-057d-4038-8bc1-dbab0a8942a6",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_2cab94c0-057d-4038-8bc1-dbab0a8942a6.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_2cab94c0-057d-4038-8bc1-dbab0a8942a6.git",
+      "name": "[PipouJS] API",
+      "alias": "PipouJS-API"
+    },
+    {
+      "app_id": "app_2c16f3f2-9bbc-40f9-8ef8-bb3e963a4312",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_2c16f3f2-9bbc-40f9-8ef8-bb3e963a4312.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_2c16f3f2-9bbc-40f9-8ef8-bb3e963a4312.git",
+      "name": "[PipouJS] Front",
+      "alias": "PipouJS-Front"
+    },
+    {
+      "app_id": "app_da5f981d-0c8f-4452-b97b-0fe976de51f8",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_da5f981d-0c8f-4452-b97b-0fe976de51f8.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_da5f981d-0c8f-4452-b97b-0fe976de51f8.git",
+      "name": "[PipouJS] Backoffice",
+      "alias": "PipouJS-Backoffice"
+    }
+  ]
+}
