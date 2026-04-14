@@ -1,4 +1,3 @@
-pier
 const router = require('express').Router({ mergeParams: true });
 const commentController = require('../controllers/commentController');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
