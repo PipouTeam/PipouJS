@@ -15,7 +15,6 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     ArticleContent: typeof import('./src/components/ArticleContent.vue')['default']
     ArticleHeader: typeof import('./src/components/ArticleHeader.vue')['default']
-    CatalogueCard: typeof import('./src/components/CatalogueCard.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     FeaturedCarousel: typeof import('./src/components/FeaturedCarousel.vue')['default']
     ResourceList: typeof import('./src/components/ResourceList.vue')['default']
