@@ -40,11 +40,13 @@ const props = defineProps({
   title:       { type: String, default: "Nom de la ressource" },
   contentType: { type: String, default: 'Document' },
   description: { type: String, default: '' },
+  parentTitle: { type: String, default: '' },
+  parentTo:    { type: String, default: '' },
 })
 
 const breadcrumbs = [
-  { title: 'Accueil',   to: '/' },
-  { title: 'Catalogue', to: '/catalogue' },
+  { title: 'Accueil', to: '/' },
+  { title: props.parentTitle || 'Catalogue', to: props.parentTo || '/catalogue' },
   { title: props.contentType || 'Ressource', disabled: true },
 ]
 </script>

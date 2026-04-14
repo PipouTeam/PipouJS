@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS resources (
         CHECK (visibility IN ('private', 'shared', 'public')),
     media_url TEXT,
     thumbnail_url TEXT,
+    share_token VARCHAR(64) UNIQUE,
     views INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
