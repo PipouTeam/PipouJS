@@ -15,5 +15,6 @@ router.put('/resources/:id/validate', ...modOnly, resourceController.validate);
 router.put('/resources/:id/reject', ...modOnly, resourceController.reject);
 
 // M04 - Masquer un commentaire (TODO)
+router.put('/comments/:id/hide', ...modOnly, commentController.moderate);
 
 module.exports = router;
