@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "deploy": "npm install && npm run build && npx -y serve -s dist"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",

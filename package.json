@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "install": "cd ${CC_APP_FOLDER:-.} && npm install",
-    "start": "cd ${CC_APP_FOLDER:-.} && npm start"
+    "start": "cd ${CC_APP_FOLDER:-.} && npm start",
+    "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy"
   }
 }
