@@ -1,5 +1,7 @@
 C'est le projet CUBE de la PipouTEAM !
 
+Ceci est une modification
+
 ## Structure du projet
 
 ```
