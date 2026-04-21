@@ -54,7 +54,7 @@ VITE_API_URL=https://<app-api>.cleverapps.io/api npm run dev
 ## Déploiement Clever Cloud
 
 Le projet est déployé en **3 apps Clever Cloud** indépendantes depuis ce monorepo.
-
+fsqcfezdsqdqdezzd
 ### Architecture
 
 | App | Type | Alias | `CC_APP_FOLDER` |
