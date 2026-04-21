@@ -11,7 +11,7 @@ PipouJS/
 └── package.json                  # Orchestration monorepo (Clever Cloud)
 ```
 
-## Développement local
+## Développement Blipbloup
 
 ### Prérequis
 
@@ -100,7 +100,7 @@ Le projet est déployé en **3 apps Clever Cloud** indépendantes depuis ce mono
 | `CC_APP_FOLDER` | `backoffice` |
 | `VITE_API_URL` | URL de l'API sans `/api` (ex: `https://<api>.cleverapps.io`) |
 
-### Déployer
+### Déploiez
 
 ```bash
 # Déployer l'API
