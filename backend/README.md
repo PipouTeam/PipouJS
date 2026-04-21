@@ -10,17 +10,9 @@
 
 > npm run setup
 
-3. Create .env with following content
+3. Create .env by copying .env.example and filling in the values
 
-````
-DB_HOST=
-DB_DATABASE=
-DB_USER=
-DB_PASSWORD=
-
-PORT=3000
-SECRET=AAA
-````
+> cp .env.example .env
 
 ## Run
 

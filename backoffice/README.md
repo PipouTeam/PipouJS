@@ -17,7 +17,8 @@ Interface d'administration pour gérer les utilisateurs et les articles.
 ## Installation
 
 ```bash
-cd backend-admin
+cd backoffice
+cp .env.example .env
 npm install
 npm run dev
 ```
