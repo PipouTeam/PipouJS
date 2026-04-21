@@ -25,13 +25,13 @@ PipouJS/
 docker compose up -d
 
 # Backend (port 3001)
-cd backend && npm install && npm start
+cd backend && npm deploy
 
 # Frontend (port 3000)
-cd frontend/pipou-ressource && npm install && npm run dev
+cd frontend/pipou-ressource && npm deploy
 
 # Backoffice (port 3002)
-cd backoffice && npm install && npm run dev
+cd backoffice && npm deploy
 ```
 
 ### Comptes de test
