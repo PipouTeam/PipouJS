@@ -16,3 +16,6 @@ android/
 .vscode/
 *.swp
 *.swo
+
+playwright-report/
+test-results

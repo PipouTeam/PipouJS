@@ -1,10 +1,21 @@
 {
   "name": "pipoujs",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend/backoffice",
+    "frontend/pipou-ressource",
+    "e2e"
+  ],
   "scripts": {
     "install": "cd ${CC_APP_FOLDER:-.} && npm install",
     "start": "cd ${CC_APP_FOLDER:-.} && npm start",
     "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy",
+    "test": "npm -w backend test && npm -w frontend/backoffice test && npm -w frontend/pipou-ressource test",
+    "test:backend": "npm -w backend test",
+    "test:backoffice": "npm -w frontend/backoffice test",
+    "test:app": "npm -w frontend/pipou-ressource test",
+    "test:integration": "npm -w backend run test:docker",
     "test:e2e": "./e2e/scripts/start-e2e.sh",
     "test:perf": "./perf/scripts/run-perf.sh",
     "test:perf:smoke": "./perf/scripts/run-perf.sh smoke",
