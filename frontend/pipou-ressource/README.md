@@ -4,27 +4,65 @@ Application frontend pour la gestion de ressources pédagogiques.
 
 ## Installation
 
-```bash
-npm install
+Suivre l'ensemble des instructions dans [le guide d'installation](./../../docs/guide_installation.md).
+
+## Scripts
+
+Il faut se placer dans le dossier `frontend/pipou-ressource` pour executer les scripts suivants :
+
+| Commande | Description |
+|----------|-------------|
+| `npm run dev` | Serveur de dev (http://localhost:3000) |
+| `npm run build` | Build de production dans `dist/` |
+| `npm run preview` | Preview du build de production |
+| `npm run lint` | ESLint avec auto-fix |
+
+## Structure du projet
+
+```
+src/
+├── pages/                    # Pages (routes auto-generees)
+│   ├── index.vue             # Accueil
+│   ├── catalogue.vue         # Parcourir les ressources
+│   ├── connexion.vue         # Connexion
+│   ├── creer.vue             # Créer une ressource
+│   ├── compte.vue            # Gestion du compte
+│   ├── mes-ressources.vue    # Ressources de l'utilisateur
+│   ├── faq.vue               # FAQ
+│   ├── contact.vue           # Contact
+│   ├── mentions.vue          # Mentions légales
+│   ├── article/[id].vue      # Détail d'un article
+│   └── ressources/[id].vue   # Détail d'une ressource
+├── components/               # Composants réutilisables
+├── stores/                   # State management (Pinia)
+│   ├── auth.js               # Authentification (token, user)
+│   └── app.js                # Etat global
+├── plugins/                  # Plugins Vue (Vuetify, etc.)
+├── router/                   # Configuration du routeur
+├── layouts/                  # Layouts de page
+└── assets/                   # Ressources statiques
 ```
 
-## Version Web
+## Fonctionnement
 
-### Développement
+### Routing
 
-```bash
-npm run dev
-```
+Les routes sont **auto-générées** à partir des fichiers dans `src/pages/` grâce a unplugin-vue-router. Un fichier `pages/catalogue.vue` devient automatiquement la route `/catalogue`.
 
-L'application sera accessible à [http://localhost:3000](http://localhost:3000)
+### Authentification
 
-### Production
+- Token JWT stocké dans le localStorage
+- Envoye via le header `Authorization: Bearer <token>`
+- Client HTTP : fetch custom (`api.js`)
+- Routes protégées : `/compte`, `/mes-ressources`, `/creer` (redirection vers `/connexion`)
 
-```bash
-npm run build
-```
+### Technologies
 
-Les fichiers optimisés seront générés dans le dossier `dist/`
+- [Vue 3](https://vuejs.org/) + [Vuetify 3](https://vuetifyjs.com/)
+- [Pinia](https://pinia.vuejs.org/) (state management, composition API)
+- [Vite](https://vitejs.dev/) avec auto-import des composants et routes
+- [Tiptap](https://tiptap.dev/) (editeur de texte riche)
+- [Capacitor](https://capacitorjs.com/) (support mobile Android)
 
 ---
 
@@ -33,7 +71,7 @@ Les fichiers optimisés seront générés dans le dossier `dist/`
 ### Prérequis
 
 - [Android Studio](https://developer.android.com/studio) installé
-- JDK 17+ configuré
+- JDK 17+ configure
 - Variable d'environnement `ANDROID_HOME` définie
 
 ### Initialisation
@@ -55,10 +93,8 @@ npx cap add android
 
 4. **Ouvrir dans Android Studio** :
 ```bash
-export CAPACITOR_ANDROID_STUDIO_PATH="/home/pommefrite/Documents/Application/android-studio-panda1-patch1-linux/android-studio/bin/studio.sh"
 npx cap open android
 ```
-CAPACITOR_ANDROID_STUDIO_PATH = Votre chemin android studio
 
 ### Commandes Capacitor utiles
 
@@ -74,13 +110,3 @@ CAPACITOR_ANDROID_STUDIO_PATH = Votre chemin android studio
 Depuis Android Studio :
 1. `Build` > `Build Bundle(s) / APK(s)` > `Build APK(s)`
 2. L'APK sera généré dans `android/app/build/outputs/apk/debug/`
-
----
-
-## Technologies
-
-- [Vue 3](https://vuejs.org/)
-- [Vuetify 3](https://vuetifyjs.com/)
-- [Pinia](https://pinia.vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Capacitor](https://capacitorjs.com/)
