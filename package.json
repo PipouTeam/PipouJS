@@ -4,6 +4,7 @@
   "scripts": {
     "install": "cd ${CC_APP_FOLDER:-.} && npm install",
     "start": "cd ${CC_APP_FOLDER:-.} && npm start",
-    "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy"
+    "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy",
+    "test:e2e": "./e2e/scripts/start-e2e.sh"
   }
 }

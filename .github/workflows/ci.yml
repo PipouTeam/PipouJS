@@ -186,10 +186,133 @@ jobs:
           S3_BUCKET: pipou-resources
         run: npm run test:integration
 
+  # ── Tests E2E ─────────────────────────────────────────────────────
+  test-e2e:
+    name: Tests E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend-app, build-frontend-backoffice]
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pipou_db
+          POSTGRES_USER: pipou
+          POSTGRES_PASSWORD: pipou_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pipou -d pipou_db"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -sf http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Créer le bucket MinIO
+      - name: Configurer MinIO
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:9000/minio/health/live && break
+            sleep 2
+          done
+          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          chmod +x /tmp/mc
+          /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
+          /tmp/mc mb --ignore-existing local/pipou-resources
+          /tmp/mc anonymous set download local/pipou-resources
+
+      # Installer et lancer le backend
+      - name: Démarrer le backend
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: pipou_db
+          DB_USER: pipou
+          DB_PASSWORD: pipou_secret
+          PORT: 3001
+          SECRET: test_secret
+          FRONTEND_URL: http://localhost:3000
+          S3_ENDPOINT: http://127.0.0.1:9000
+          S3_PUBLIC_URL: http://127.0.0.1:9000
+          S3_ACCESS_KEY: minioadmin
+          S3_SECRET_KEY: minioadmin
+          S3_BUCKET: pipou-resources
+        run: |
+          npm ci
+          node src/server.js &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3001/api/stats && break
+            sleep 2
+          done
+
+      # Build et servir pipou-ressource
+      - name: Démarrer pipou-ressource
+        working-directory: frontend/pipou-ressource
+        env:
+          VITE_API_URL: http://localhost:3001/api
+        run: |
+          npm ci
+          npm run build
+          npx -y serve -s dist -l 3000 &
+          for i in $(seq 1 15); do
+            curl -sf http://127.0.0.1:3000/ && break
+            sleep 2
+          done
+
+      # Build et servir backoffice
+      - name: Démarrer backoffice
+        working-directory: frontend/backoffice
+        env:
+          VITE_API_URL: http://localhost:3001/
+        run: |
+          npm ci
+          npm run build
+          npx -y serve -s dist -l 3002 &
+          for i in $(seq 1 15); do
+            curl -sf http://127.0.0.1:3002/ && break
+            sleep 2
+          done
+
+      # Installer Playwright et lancer les tests
+      - name: Installer Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Lancer les tests E2E
+        working-directory: e2e
+        run: npx playwright test
+
+      - name: Upload rapport Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
   # Placeholder : sera activé quand les tests seront en place
-  # test-e2e:
-  #   name: Tests E2E
-  #   ...
   # test-performance:
   #   name: Tests de performance
   #   ...
