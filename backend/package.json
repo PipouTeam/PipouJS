@@ -8,7 +8,9 @@
         "start": "node --experimental-vm-modules src/server.js",
         "deploy": "npm install && npm update && node --experimental-vm-modules src/server.js",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testPathIgnorePatterns=integration",
+        "test:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testPathIgnorePatterns=integration --reporters=default --reporters=jest-junit",
         "test:integration": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
+        "test:integration:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand --reporters=default --reporters=jest-junit",
         "test:all": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --runInBand",
         "test:docker": "./scripts/test-integration.sh"
     },
@@ -49,6 +51,7 @@
     },
     "devDependencies": {
         "jest": "^30.3.0",
+        "jest-junit": "^16.0.0",
         "supertest": "^7.2.2"
     }
 }

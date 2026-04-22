@@ -5,6 +5,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   # ── Build ────────────────────────────────────────────────────────
   build-backend:
@@ -70,7 +74,17 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npm test
+      - run: npm run test:ci
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
+      - name: Rapport de tests
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Résultats — Backend Unit
+          path: backend/test-results/junit.xml
+          reporter: jest-junit
 
   test-frontend-unit-app:
     name: Tests unitaires Frontend (pipou-ressource)
@@ -88,6 +102,15 @@ jobs:
           cache-dependency-path: frontend/pipou-ressource/package-lock.json
       - run: npm ci
       - run: npm test
+        env:
+          CI: true
+      - name: Rapport de tests
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Résultats — Frontend App
+          path: frontend/pipou-ressource/test-results/junit.xml
+          reporter: jest-junit
 
   test-frontend-unit-backoffice:
     name: Tests unitaires Frontend (backoffice)
@@ -105,6 +128,15 @@ jobs:
           cache-dependency-path: frontend/backoffice/package-lock.json
       - run: npm ci
       - run: npm test
+        env:
+          CI: true
+      - name: Rapport de tests
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Résultats — Frontend Backoffice
+          path: frontend/backoffice/test-results/junit.xml
+          reporter: jest-junit
 
   # ── Tests d'intégration ──────────────────────────────────────────
   test-backend-integration:
@@ -155,15 +187,12 @@ jobs:
 
       - run: npm ci
 
-      # Démarrer MinIO et créer le bucket
       - name: Configurer MinIO (créer le bucket)
         run: |
-          # Attendre que MinIO soit prêt
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          # Installer mc et créer le bucket
           curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
           chmod +x /tmp/mc
           /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
@@ -184,7 +213,17 @@ jobs:
           S3_ACCESS_KEY: minioadmin
           S3_SECRET_KEY: minioadmin
           S3_BUCKET: pipou-resources
-        run: npm run test:integration
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
+        run: npm run test:integration:ci
+
+      - name: Rapport de tests
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Résultats — Backend Intégration
+          path: backend/test-results/junit.xml
+          reporter: jest-junit
 
   # ── Tests E2E ─────────────────────────────────────────────────────
   test-e2e:
@@ -227,7 +266,6 @@ jobs:
         with:
           node-version: 20
 
-      # Créer le bucket MinIO
       - name: Configurer MinIO
         run: |
           for i in $(seq 1 30); do
@@ -240,7 +278,6 @@ jobs:
           /tmp/mc mb --ignore-existing local/pipou-resources
           /tmp/mc anonymous set download local/pipou-resources
 
-      # Installer et lancer le backend
       - name: Démarrer le backend
         working-directory: backend
         env:
@@ -265,7 +302,6 @@ jobs:
             sleep 2
           done
 
-      # Build et servir pipou-ressource
       - name: Démarrer pipou-ressource
         working-directory: frontend/pipou-ressource
         env:
@@ -279,7 +315,6 @@ jobs:
             sleep 2
           done
 
-      # Build et servir backoffice
       - name: Démarrer backoffice
         working-directory: frontend/backoffice
         env:
@@ -293,7 +328,6 @@ jobs:
             sleep 2
           done
 
-      # Installer Playwright et lancer les tests
       - name: Installer Playwright
         working-directory: e2e
         run: |
@@ -302,9 +336,19 @@ jobs:
 
       - name: Lancer les tests E2E
         working-directory: e2e
+        env:
+          CI: true
         run: npx playwright test
 
-      - name: Upload rapport Playwright
+      - name: Rapport de tests
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Résultats — E2E Playwright
+          path: e2e/test-results/junit.xml
+          reporter: jest-junit
+
+      - name: Upload rapport Playwright (HTML)
         if: failure()
         uses: actions/upload-artifact@v4
         with:

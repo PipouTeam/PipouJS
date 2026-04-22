@@ -5,7 +5,9 @@ module.exports = defineConfig({
   testMatch: '**/*.spec.js',
   timeout: 30000,
   retries: 0,
-  reporter: [['html', { open: 'never' }]],
+  reporter: process.env.CI
+    ? [['html', { open: 'never' }], ['junit', { outputFile: './test-results/junit.xml' }]]
+    : [['html', { open: 'never' }]],
 
   use: {
     headless: true,

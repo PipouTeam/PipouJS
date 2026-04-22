@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+    outputFile: process.env.CI ? { junit: './test-results/junit.xml' } : undefined,
     server: {
       deps: {
         inline: ['vuetify'],
