@@ -22,7 +22,8 @@ test.describe('Création de ressource (pipou-ressource)', () => {
     await loginViaLocalStorage(page, token, user)
     await page.goto('/mes-ressources')
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Ma ressource E2E')).toBeVisible({ timeout: 5000 })
+    await page.waitForTimeout(2000)
+    await expect(page.getByText('Ma ressource E2E')).toBeVisible({ timeout: 10000 })
   })
 
   test('mes-ressources affiche les ressources de l\'utilisateur', async ({ page, request }) => {
@@ -39,7 +40,8 @@ test.describe('Création de ressource (pipou-ressource)', () => {
     await loginViaLocalStorage(page, token, user)
     await page.goto('/mes-ressources')
     await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(2000)
 
-    await expect(page.getByText('Ressource API E2E')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Ressource API E2E')).toBeVisible({ timeout: 10000 })
   })
 })

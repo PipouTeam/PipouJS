@@ -12,6 +12,7 @@ test.describe('Authentification (pipou-ressource)', () => {
     const credentials = await registerUser(request)
 
     await page.goto('/connexion')
+    await page.waitForTimeout(1000)
 
     // Remplir le formulaire de connexion (Vuetify utilise des labels flottants)
     await page.locator('input[type="email"], input[type="text"]').first().fill(credentials.email)

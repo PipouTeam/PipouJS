@@ -79,13 +79,15 @@ test.describe('Gestion des ressources (backoffice)', () => {
     const email = `citizen_api_${Date.now()}@test.com`
     const password = 'CitizenAPI_123!'
 
-    await request.post(`${API_URL}/auth/register`, {
+    const registerRes = await request.post(`${API_URL}/auth/register`, {
       data: { email, password, first_name: 'Citizen', last_name: 'API' },
     })
+    expect(registerRes.status()).toBe(201)
 
     const loginRes = await request.post(`${API_URL}/auth/login`, {
       data: { email, password },
     })
+    expect(loginRes.status()).toBe(200)
     const { token } = await loginRes.json()
 
     // Tenter d'accéder aux routes admin
