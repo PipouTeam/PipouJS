@@ -221,28 +221,64 @@ describe('adminRemove', () => {
 });
 
 describe('pendingList', () => {
-    it('retourne 501 (non implémenté)', async () => {
-        const req = {};
+    it('retourne les ressources en attente avec pagination', async () => {
+        const resources = [{ id: 1, title: 'Pending' }];
+        mockListQueries(resources);
+        const req = { query: {} };
         const res = mockRes();
         await resourceController.pendingList(req, res);
-        expect(res.status).toHaveBeenCalledWith(501);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            status: true,
+            total: 1,
+            page: 1,
+            resources,
+        }));
+    });
+
+    it('filtre uniquement les ressources pending', async () => {
+        mockListQueries();
+        const req = { query: {} };
+        const res = mockRes();
+        await resourceController.pendingList(req, res);
+        const sqlCount = db.query.mock.calls[0][0];
+        expect(sqlCount).toContain("status = 'pending'");
     });
 });
 
 describe('validate', () => {
-    it('retourne 501 (non implémenté)', async () => {
-        const req = {};
+    it('passe le status à validated', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        const req = { params: { id: '1' } };
         const res = mockRes();
         await resourceController.validate(req, res);
-        expect(res.status).toHaveBeenCalledWith(501);
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining("status = 'validated'"), ['1']);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true, message: 'Ressource validée' }));
+    });
+
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' } };
+        const res = mockRes();
+        await resourceController.validate(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
     });
 });
 
 describe('reject', () => {
-    it('retourne 501 (non implémenté)', async () => {
-        const req = {};
+    it('passe le status à rejected', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        const req = { params: { id: '1' } };
         const res = mockRes();
         await resourceController.reject(req, res);
-        expect(res.status).toHaveBeenCalledWith(501);
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining("status = 'rejected'"), ['1']);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true, message: 'Ressource rejetée' }));
+    });
+
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' } };
+        const res = mockRes();
+        await resourceController.reject(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
     });
 });
