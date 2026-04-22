@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS resources (
     resource_type_id INT REFERENCES resource_types(id) ON DELETE SET NULL,
     author_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL DEFAULT 'draft'
-        CHECK (status IN ('draft', 'pending', 'validated', 'suspended')),
+        CHECK (status IN ('draft', 'pending', 'validated', 'suspended', 'rejected')),
     visibility VARCHAR(20) NOT NULL DEFAULT 'public'
         CHECK (visibility IN ('private', 'shared', 'public')),
     media_url TEXT,

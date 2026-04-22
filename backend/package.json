@@ -9,7 +9,8 @@
         "deploy": "npm install && npm update && node --experimental-vm-modules src/server.js",
         "test": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testPathIgnorePatterns=integration",
         "test:integration": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --testMatch='**/tests/integration/**/*.test.js' --runInBand",
-        "test:all": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --runInBand"
+        "test:all": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit --runInBand",
+        "test:docker": "./scripts/test-integration.sh"
     },
     "jest": {
         "testEnvironment": "node",
