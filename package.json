@@ -5,6 +5,11 @@
     "install": "cd ${CC_APP_FOLDER:-.} && npm install",
     "start": "cd ${CC_APP_FOLDER:-.} && npm start",
     "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy",
-    "test:e2e": "./e2e/scripts/start-e2e.sh"
+    "test:e2e": "./e2e/scripts/start-e2e.sh",
+    "test:perf": "./perf/scripts/run-perf.sh",
+    "test:perf:smoke": "./perf/scripts/run-perf.sh smoke",
+    "test:perf:load": "./perf/scripts/run-perf.sh load",
+    "test:perf:stress": "./perf/scripts/run-perf.sh stress",
+    "test:perf:spike": "./perf/scripts/run-perf.sh spike"
   }
 }

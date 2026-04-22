@@ -48,10 +48,10 @@ services:
         mc anonymous set download local/pipou-resources
       "
 
-  # ── Services E2E ─────────────────────────────────────────────────
+  # ── Services E2E / Perf ──────────────────────────────────────────
   backend-test:
     build: ./backend
-    profiles: ["e2e"]
+    profiles: ["e2e", "perf"]
     restart: "no"
     depends_on:
       postgres-test:
