@@ -16,7 +16,7 @@ module.exports = {
 
     // E01 : Liste des commentaires d'une ressource (public, avec réponses imbriquées)
     async list(req, res) {
-        const { id: resource_id } = req.params;
+        const resource_id = req.params.resourceId || req.params.id;
 
         // Vérifier que la ressource existe et est accessible
         const resource = await db.query(
@@ -71,7 +71,7 @@ module.exports = {
 
     // E01 : Poster un commentaire (JWT requis)
     async create(req, res) {
-        const { id: resource_id } = req.params;
+        const resource_id = req.params.resourceId || req.params.id;
         const { content } = req.body;
 
         if (!content || content.trim() === '') {
@@ -103,7 +103,8 @@ module.exports = {
 
     // E02 : Répondre à un commentaire (parent_id = cid)
     async reply(req, res) {
-        const { id: resource_id, cid } = req.params;
+        const resource_id = req.params.resourceId || req.params.id;
+        const { cid } = req.params;
         const { content } = req.body;
 
         if (!content || content.trim() === '') {

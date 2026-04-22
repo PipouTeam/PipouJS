@@ -76,4 +76,29 @@ async function createSuperAdminAndLogin(app, pool) {
     };
 }
 
-module.exports = { createUserAndLogin, createAdminAndLogin, createSuperAdminAndLogin };
+// Cree un moderateur directement en DB
+async function createModeratorAndLogin(app, pool) {
+    const bcrypt = require('bcryptjs');
+    const email = `moderator_${Date.now()}_${Math.random().toString(36).slice(2)}@test.com`;
+    const password = 'ModeratorPass123!';
+    const hash = await bcrypt.hash(password, 10);
+
+    await pool.query(
+        `INSERT INTO users (email, password, first_name, last_name, role)
+         VALUES ($1, $2, 'Moderator', 'User', 'moderator')`,
+        [email, hash]
+    );
+
+    const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email, password })
+        .expect(200);
+
+    return {
+        token: loginRes.body.token,
+        user: loginRes.body.user,
+        credentials: { email, password },
+    };
+}
+
+module.exports = { createUserAndLogin, createAdminAndLogin, createSuperAdminAndLogin, createModeratorAndLogin };
