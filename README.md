@@ -16,6 +16,11 @@ PipouJS/
 
 - [Guide d'installation locale](docs/guide_installation.md) — prérequis, configuration, modes de lancement
 - [Déploiement Clever Cloud](docs/guide_clever_cloud.md) — architecture, variables d'env, commandes de deploy
+
+Chaque composant de la stack à sa propre documentation:
+- [Backend](backend/README.md) — API, endpoints, authentification, tests
+- [Pipou Ressource](frontend/pipou-ressource/README.md) — app principale, routing auto, mobile
+- [Backoffice](frontend/backoffice/README.md) — interface admin, gestion des rôles
   
 ## Quick start
 
