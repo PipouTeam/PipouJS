@@ -11,6 +11,8 @@
     "install": "cd ${CC_APP_FOLDER:-.} && npm install",
     "start": "cd ${CC_APP_FOLDER:-.} && npm start",
     "deploy": "cd ${CC_APP_FOLDER:-.} && npm run deploy",
+    "dev": "docker compose --profile full-local up --build",
+    "dev:front": "docker compose --profile front-only up --build",
     "test": "npm -w backend test && npm -w frontend/backoffice test && npm -w frontend/pipou-ressource test",
     "test:backend": "npm -w backend test",
     "test:backoffice": "npm -w frontend/backoffice test",
