@@ -47,7 +47,7 @@ Le backoffice dépend d'un fichier local `.env` qui ne doit pas être versionné
 
 ## Lancement de la stack
 
-Trois modes sont disponibles selon l'environnement souhaité.
+Deux profils Docker Compose sont disponibles. Un profil doit toujours être spécifié (`docker compose up` seul ne lance rien).
 
 > Dans tous les cas, les frontends lisent leur `VITE_API_URL` depuis leur fichier `.env`.
 > Copier le `.env.example` en `.env` et adapter la valeur selon le mode choisi.
@@ -78,14 +78,6 @@ docker compose --profile front-only up
 ```
 
 > `.env` des frontends : `VITE_API_URL=https://<app-api>.cleverapps.io/api` (pipou-ressource) / `https://<app-api>.cleverapps.io/` (backoffice)
-
-### Backend + DB uniquement (mode par défaut)
-
-Ne lance que PostgreSQL, MinIO et le backend :
-
-```bash
-docker compose up
-```
 
 ## A savoir
 ### Données de développement

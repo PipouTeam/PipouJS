@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    profiles: ["full-local"]
     restart: unless-stopped
     environment:
       POSTGRES_DB: pipou_db
@@ -15,6 +16,7 @@ services:
 
   backend:
     build: ./backend
+    profiles: ["full-local"]
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -38,6 +40,7 @@ services:
 
   minio:
     image: minio/minio
+    profiles: ["full-local"]
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -52,6 +55,7 @@ services:
   # Crée le bucket + seed les fichiers de démo au démarrage
   minio-init:
     image: minio/mc
+    profiles: ["full-local"]
     depends_on:
       - minio
     volumes:
