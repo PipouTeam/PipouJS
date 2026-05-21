@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "dev:mobile": "export CAPACITOR_ANDROID_STUDIO_PATH='/home/pommefrite/Documents/Application/android-studio-panda1-patch1-linux/android-studio/bin/studio.sh' && npx cap open android",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --config vitest.config.js",
