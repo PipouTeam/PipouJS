@@ -161,7 +161,7 @@ describe('GET /api/resources', () => {
         expect(res.body.total).toBe(1);
     });
 
-    it('devrait aussi inclure les ressources shared pour un utilisateur connecte', async () => {
+    it('ne devrait pas inclure les ressources shared dans le catalogue (accès par lien direct uniquement)', async () => {
         const admin = await createAdminAndLogin(app, pool);
         const citizen = await createUserAndLogin(app);
 
@@ -181,7 +181,9 @@ describe('GET /api/resources', () => {
             .set('Authorization', `Bearer ${citizen.token}`);
 
         expect(res.status).toBe(200);
-        expect(res.body.resources).toHaveLength(2);
+        // Le catalogue ne montre que les ressources publiques, pas les shared
+        expect(res.body.resources).toHaveLength(1);
+        expect(res.body.resources[0].title).toBe('Publique');
     });
 
     it('devrait supporter la pagination', async () => {

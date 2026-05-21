@@ -1,4 +1,5 @@
 jest.mock('../../src/models/database', () => ({ query: jest.fn() }));
+jest.mock('../../src/services/s3', () => ({ deleteFile: jest.fn().mockResolvedValue() }));
 
 const db = require('../../src/models/database');
 const resourceController = require('../../src/controllers/resourceController');
@@ -130,6 +131,154 @@ describe('suspend', () => {
         const req = { params: { id: '999' } };
         const res = mockRes();
         await resourceController.suspend(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+});
+
+describe('listMine', () => {
+    it('retourne les ressources de l\'utilisateur connecté', async () => {
+        const resources = [{ id: 1, title: 'Ma ressource' }];
+        db.query.mockResolvedValueOnce({ rows: resources });
+        const req = { user: { id: 42 } };
+        const res = mockRes();
+        await resourceController.listMine(req, res);
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining('author_id = $1'), [42]);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ resources }));
+    });
+});
+
+describe('adminCreate', () => {
+    it('400 si title manquant', async () => {
+        const req = { body: {}, user: { id: 1, role: 'admin' } };
+        const res = mockRes();
+        await resourceController.adminCreate(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it('201 avec status validated par défaut', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 10 }] });
+        const req = { body: { title: 'Test' }, user: { id: 1, role: 'admin' } };
+        const res = mockRes();
+        await resourceController.adminCreate(req, res);
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insertCall = db.query.mock.calls[0];
+        expect(insertCall[1]).toContain('validated');
+    });
+
+    it('respecte le status fourni dans le body', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 10 }] });
+        const req = { body: { title: 'Test', status: 'draft' }, user: { id: 1, role: 'admin' } };
+        const res = mockRes();
+        await resourceController.adminCreate(req, res);
+        const insertCall = db.query.mock.calls[0];
+        expect(insertCall[1]).toContain('draft');
+    });
+});
+
+describe('adminUpdate', () => {
+    it('400 si aucun champ à mettre à jour', async () => {
+        const req = { params: { id: '1' }, body: {} };
+        const res = mockRes();
+        await resourceController.adminUpdate(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' }, body: { title: 'Nouveau' } };
+        const res = mockRes();
+        await resourceController.adminUpdate(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('met à jour les champs fournis', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        const req = { params: { id: '1' }, body: { title: 'Nouveau titre' } };
+        const res = mockRes();
+        await resourceController.adminUpdate(req, res);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true }));
+    });
+});
+
+describe('adminRemove', () => {
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' } };
+        const res = mockRes();
+        await resourceController.adminRemove(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it('supprime la ressource', async () => {
+        db.query
+            .mockResolvedValueOnce({ rows: [{ media_url: null }] })
+            .mockResolvedValueOnce({});
+        const req = { params: { id: '1' } };
+        const res = mockRes();
+        await resourceController.adminRemove(req, res);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true }));
+    });
+});
+
+describe('pendingList', () => {
+    it('retourne les ressources en attente avec pagination', async () => {
+        const resources = [{ id: 1, title: 'Pending' }];
+        mockListQueries(resources);
+        const req = { query: {} };
+        const res = mockRes();
+        await resourceController.pendingList(req, res);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            status: true,
+            total: 1,
+            page: 1,
+            resources,
+        }));
+    });
+
+    it('filtre uniquement les ressources pending', async () => {
+        mockListQueries();
+        const req = { query: {} };
+        const res = mockRes();
+        await resourceController.pendingList(req, res);
+        const sqlCount = db.query.mock.calls[0][0];
+        expect(sqlCount).toContain("status = 'pending'");
+    });
+});
+
+describe('validate', () => {
+    it('passe le status à validated', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        const req = { params: { id: '1' } };
+        const res = mockRes();
+        await resourceController.validate(req, res);
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining("status = 'validated'"), ['1']);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true, message: 'Ressource validée' }));
+    });
+
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' } };
+        const res = mockRes();
+        await resourceController.validate(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+    });
+});
+
+describe('reject', () => {
+    it('passe le status à rejected', async () => {
+        db.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        const req = { params: { id: '1' } };
+        const res = mockRes();
+        await resourceController.reject(req, res);
+        expect(db.query).toHaveBeenCalledWith(expect.stringContaining("status = 'rejected'"), ['1']);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: true, message: 'Ressource rejetée' }));
+    });
+
+    it('404 si ressource inexistante', async () => {
+        db.query.mockResolvedValueOnce({ rows: [] });
+        const req = { params: { id: '99' } };
+        const res = mockRes();
+        await resourceController.reject(req, res);
         expect(res.status).toHaveBeenCalledWith(404);
     });
 });

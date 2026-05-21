@@ -127,28 +127,33 @@ const favoriteIds = computed(() => new Set(favorites.value.map(f => f.id)))
 const savedIds = computed(() => new Set(saved.value.map(s => s.id)))
 
 onMounted(async () => {
-  try {
-    const [statsData, recentData, catData] = await Promise.all([
-      api.get('/stats'),
-      api.get('/resources?limit=6&sort=created_at'),
-      api.get('/categories'),
-    ])
-    stats.value = statsData
-    recentResources.value = recentData.resources ?? []
-    categories.value = catData.categories ?? catData
+  const fetches = [
+    api.get('/stats')
+      .then(data => { stats.value = data })
+      .catch(e => console.error('Erreur stats:', e)),
 
-    if (isLoggedIn) {
-      try {
-        const dashboard = await api.get('/progress/dashboard', true)
-        favorites.value = dashboard.favorites ?? []
-        saved.value = dashboard.saved ?? []
-      } catch {}
-    }
-  } catch (e) {
-    console.error('Erreur page accueil:', e)
-  } finally {
-    loadingRecent.value = false
+    api.get('/resources?limit=6&sort=created_at')
+      .then(data => { recentResources.value = data.resources ?? [] })
+      .catch(e => console.error('Erreur ressources récentes:', e)),
+
+    api.get('/categories')
+      .then(data => { categories.value = data.categories ?? data })
+      .catch(e => console.error('Erreur catégories:', e)),
+  ]
+
+  if (isLoggedIn) {
+    fetches.push(
+      api.get('/progress/dashboard', true)
+        .then(data => {
+          favorites.value = data.favorites ?? []
+          saved.value = data.saved ?? []
+        })
+        .catch(e => console.error('Erreur dashboard:', e))
+    )
   }
+
+  await Promise.all(fetches)
+  loadingRecent.value = false
 })
 
 async function toggleFavorite(resource) {

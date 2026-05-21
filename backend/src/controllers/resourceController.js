@@ -338,18 +338,62 @@ module.exports = {
     // M03 : Liste des ressources en attente
     async pendingList(req, res) {
         // TODO collègue : implémenter M03 - liste resources avec status='pending'
-        return res.status(501).json({ status: false, message: 'Not implemented' });
+         const { page = 1, limit = 20 } = req.query;
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        const countResult = await db.query(
+            `SELECT COUNT(*) FROM resources r WHERE r.status = 'pending'`
+        );
+        const total = parseInt(countResult.rows[0].count);
+
+        const result = await db.query(
+            `SELECT ${RESOURCE_FIELDS} FROM resources r ${RESOURCE_JOINS}
+            WHERE r.status = 'pending'
+            ORDER BY r.created_at ASC
+            LIMIT $1 OFFSET $2`,
+            [parseInt(limit), offset]
+        );
+
+        return res.json({
+            status: true,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / parseInt(limit)),
+            resources: result.rows,
+        });
     },
 
     // M01 : Valider une ressource
     async validate(req, res) {
         // TODO collègue : implémenter M01 - passer status à 'validated'
-        return res.status(501).json({ status: false, message: 'Not implemented' });
+            const { id } = req.params;
+
+            const result = await db.query(
+                `UPDATE resources SET status = 'validated', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id`,
+                [id]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ status: false, message: 'Ressource introuvable' });
+            }
+
+            return res.json({ status: true, message: 'Ressource validée' });
     },
 
     // M02 : Rejeter une ressource
     async reject(req, res) {
         // TODO collègue : implémenter M02 - passer status à 'draft' ou autre + motif
-        return res.status(501).json({ status: false, message: 'Not implemented' });
-    },
+            const { id } = req.params;
+
+            const result = await db.query(
+                `UPDATE resources SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id`,
+                [id]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ status: false, message: 'Ressource introuvable' });
+            }
+
+            return res.json({ status: true, message: 'Ressource rejetée' });
+            },
 };
