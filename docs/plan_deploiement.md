@@ -1,6 +1,6 @@
 # Plan de Déploiement — PipouJS
 
-**Version :** 1.0.0
+**Version :** 1.1.0
 **Date :** 2026-05-21
 **Projet :** PipouJS — Plateforme de partage de ressources pédagogiques
 
@@ -56,14 +56,12 @@ Ces trois services communiquent avec une base de données **PostgreSQL 16** et u
 | Environnement | Infrastructure | Branche Git | Déploiement |
 |---------------|----------------|-------------|-------------|
 | Développement | Local (Docker Compose) | `dev` | `npm run dev` |
-| Staging | Docker Compose + CI GitHub Actions | `staging` | CI automatique (pas de cloud) |
-| Production | Clever Cloud | `main` | CD automatique (GitHub Actions → Clever Cloud) |
+| Staging | CI GitHub Actions uniquement | `staging` | CI automatique (pas de cloud) |
+| Production | Clever Cloud | `main` | CD automatique (GitHub Actions -> Clever Cloud) |
 
-Le staging ne déploie **pas** sur un serveur distant — il sert de filet de sécurité via le CI (build + tests complets) avant d'autoriser le merge vers `main`. Cela évite de doubler les coûts d'hébergement tout en garantissant une validation solide.
+Le staging ne déploie **pas** sur un serveur distant — il sert de barrière CI (build + tests complets) avant d'autoriser le merge vers `main`. Cela évite de doubler les coûts d'hébergement.
 
-### 2.3 Apps Clever Cloud (production uniquement) ✅ CONFIGURÉ
-
-Un seul jeu d'applications, uniquement pour la production :
+### 2.3 Apps Clever Cloud (production uniquement)
 
 | App | Type | Alias |
 |-----|------|-------|
@@ -71,29 +69,29 @@ Un seul jeu d'applications, uniquement pour la production :
 | **Frontend** | Static | `PipouJS-Front` |
 | **Backoffice** | Static | `PipouJS-Backoffice` |
 
-**Add-ons liés à l'API :**
+**Add-ons liés a l'API :**
 
 | Add-on | Plan | Usage |
 |--------|------|-------|
 | PostgreSQL | dev | Base de données principale |
 | Cellar S3 | S | Stockage des fichiers uploadés |
 
-### 2.4 Réseaux Docker (développement local) ✅ CONFIGURÉ
+### 2.4 Environnement local (Docker Compose)
 
 Docker Compose gère deux profils :
 
 | Profil | Services inclus |
 |--------|----------------|
 | `full-local` | postgres, backend, minio, minio-init, pipou-ressource, backoffice |
-| `front-only` | pipou-ressource, backoffice (backend et BDD Clever Cloud utilisés) |
+| `front-only` | pipou-ressource, backoffice (backend Clever Cloud utilisé) |
 
-PostgreSQL et MinIO ne sont **jamais exposés** publiquement en production — uniquement accessibles par le backend via le réseau interne Clever Cloud.
+PostgreSQL et MinIO ne sont **jamais exposés** publiquement en production.
 
 ---
 
 ## 3. Environnements
 
-### 3.1 Environnement de développement (branche `dev`) ✅ CONFIGURÉ
+### 3.1 Environnement de développement (branche `dev`)
 
 | Paramètre | Valeur |
 |-----------|--------|
@@ -107,34 +105,30 @@ PostgreSQL et MinIO ne sont **jamais exposés** publiquement en production — u
 | URL backend | `http://localhost:3001` |
 | URL MinIO console | `http://localhost:9002` |
 
-Toute nouvelle fonctionnalité est développée sur une branche dédiée (`feature/*`, `fix/*`, etc.) puis intégrée à `dev` via Pull Request.
+Toute nouvelle fonctionnalité est développée sur une branche dédiée (`feature/*`, `fix/*`, etc.) puis intégrée a `dev` via Pull Request.
 
-### 3.2 Environnement de staging (branche `staging`) ✅ CI / PAS DE CLOUD
+### 3.2 Environnement de staging (branche `staging`)
 
 | Paramètre | Valeur |
 |-----------|--------|
-| Objectif | Validation complète (build + tests) avant merge vers `main` |
+| Objectif | Validation complète avant merge vers `main` |
 | Infrastructure | GitHub Actions uniquement — pas de déploiement cloud |
-| Base de données | PostgreSQL éphémère dans le CI (GitHub Actions services) |
-| Stockage | MinIO éphémère dans le CI (GitHub Actions services) |
-| Déclencheur CI | Push sur `staging` + PR vers `staging` |
+| Base de données | PostgreSQL éphémère (GitHub Actions services) |
+| Stockage | MinIO éphémère (GitHub Actions services) |
+| Déclencheur | PR vers `staging` |
 
-Le staging est une **barrière CI**, pas un environnement hébergé. Aucune app Clever Cloud dédiée — cela évite de doubler les coûts. La validation se fait via le pipeline CI (build, tests unitaires, intégration, perf) avant d'autoriser le merge vers `main`.
+Le staging est une **barrière CI**. La validation couvre : build, tests unitaires, tests d'intégration, tests de performance k6 et build Docker.
 
-> 🔜 **À améliorer :** s'assurer que le CI se déclenche bien sur les PR vers `staging` (actuellement configuré uniquement pour `main`).
-
-### 3.3 Environnement de production (branche `main`) 🔜 CD À IMPLÉMENTER
+### 3.3 Environnement de production (branche `main`)
 
 | Paramètre | Valeur |
 |-----------|--------|
 | Objectif | Service aux utilisateurs finaux |
 | Infrastructure | Clever Cloud |
-| Déploiement | Automatique via GitHub Actions à chaque merge vers `main` |
+| Déploiement | Automatique via GitHub Actions a chaque merge vers `main` |
 | Base de données | PostgreSQL Clever Cloud (données réelles) |
 | Stockage | Cellar S3 Clever Cloud |
 | HTTPS | Géré automatiquement par Clever Cloud (Let's Encrypt) |
-
-> 🔜 **À implémenter :** workflow `deploy-main.yml` — déclenché sur push vers `main`, déploie les 3 apps Clever Cloud automatiquement.
 
 ---
 
@@ -142,16 +136,15 @@ Le staging est une **barrière CI**, pas un environnement hébergé. Aucune app 
 
 ### 4.1 Outils
 
-**Git + GitHub** — hébergement du code source, gestion des branches et des Pull Requests. ✅ CONFIGURÉ
+- **Git + GitHub** — hébergement du code source, branches et Pull Requests
+- **semantic-release** — versioning automatique via `.github/workflows/release.yml`
 
-**semantic-release** — outil de versioning automatique intégré via GitHub Actions (`release.yml`). Il analyse les messages de commits depuis le dernier tag, calcule la prochaine version SemVer et crée le tag Git + la GitHub Release automatiquement.
-
-> 🔜 **À implémenter :** installer `semantic-release` et créer le workflow `.github/workflows/release.yml`.
-
-### 4.2 Stratégie de branches (Gitflow simplifié) ✅ BRANCHES CRÉÉES / 🔜 PROTECTION À CONFIGURER
+### 4.2 Stratégie de branches
 
 ```
-feature/* / fix/* / security/* / docs/* / chore/* → dev → staging → main
+feature/* --+
+fix/*       +--> dev --> staging --> main
+chore/*   --+     CI       CI+Docker   CD Clever Cloud
 ```
 
 | Branche | Protection | Règle de merge |
@@ -165,151 +158,138 @@ feature/* / fix/* / security/* / docs/* / chore/* → dev → staging → main
 | `docs/*` | Libre | Créée depuis `dev` |
 | `chore/*` | Libre | Créée depuis `dev` |
 
-> 🔜 **À configurer :** activer la protection des branches `main`, `staging`, `dev` dans les paramètres GitHub du dépôt (Settings → Branches → Branch protection rules).
-
-### 4.3 Convention de nommage ✅ / 🔜 NON ENFORCED
+### 4.3 Convention de nommage
 
 - Branches : `feature/nom`, `fix/nom`, `security/nom`, `docs/nom`, `chore/nom`
-- Commits : Convention **Conventional Commits** (`feat:`, `fix:`, `feat!:`, `chore:`, `docs:`)
-- Tags de version : SemVer
-  - `v0.0.1` — Fix (`fix:`)
-  - `v0.1.0` — Mineur (`feat:`)
-  - `v1.0.0` — Majeur (`feat!:` ou breaking change)
+- Commits : **Conventional Commits** (`feat:`, `fix:`, `feat!:`, `chore:`, `docs:`, `ci:`, `test:`)
+- Tags de version : SemVer automatique via semantic-release
 
-> 🔜 **À implémenter :** ajouter un job de vérification des messages de commit dans le workflow CI (ex: `commitlint`).
-
-### 4.4 Versioning automatique avec semantic-release 🔜 À IMPLÉMENTER
+### 4.4 Versioning automatique avec semantic-release
 
 **Fichier :** `.github/workflows/release.yml`
-**Déclencheur :** Push sur `dev`, `staging` ou `main`
+**Déclencheur :** Push sur `dev`, `staging` ou `main` (= apres chaque merge de PR)
 
-semantic-release analyse les commits depuis le dernier tag et détermine automatiquement la prochaine version :
-
-| Type de commit | Version impactée | Exemple |
+| Type de commit | Impact | Exemple |
 |---|---|---|
-| `fix:` | PATCH : `v1.0.0` → `v1.0.1` | `fix: correction bug connexion` |
-| `feat:` | MINOR : `v1.0.0` → `v1.1.0` | `feat: ajout upload de ressources` |
-| `feat!:` | MAJOR : `v1.0.0` → `v2.0.0` | `feat!: refonte complète de l'API` |
+| `fix:` | PATCH | `v1.0.0` -> `v1.0.1` |
+| `feat:` | MINOR | `v1.0.0` -> `v1.1.0` |
+| `feat!:` | MAJOR | `v1.0.0` -> `v2.0.0` |
 
-**Tags créés automatiquement selon la branche :**
-
-| Branche | Type de release | Exemple de tag |
-|---------|----------------|----------------|
+| Branche | Type de release | Exemple |
+|---------|----------------|---------|
 | `dev` | Pre-release alpha | `v1.1.0-alpha.1` |
 | `staging` | Pre-release beta | `v1.1.0-beta.1` |
 | `main` | Release stable | `v1.1.0` |
 
-> Le staging génère un tag beta pour tracer les versions validées avant production, même si aucun déploiement cloud n'est effectué.
-
-**Processus automatique à chaque merge :**
+**Processus automatique a chaque merge :**
 1. Analyse des commits depuis le dernier tag
 2. Calcul de la prochaine version SemVer
 3. Création du tag Git
 4. Création d'une GitHub Release avec notes générées depuis les commits
 
-Si aucun commit ne justifie une nouvelle version (ex: `chore:`, `docs:`), semantic-release ne crée rien.
+Si aucun commit ne justifie une nouvelle version (`chore:`, `docs:`), semantic-release ne crée rien.
 
 ---
 
 ## 5. Intégration continue et automatisation (CI/CD)
 
-### 5.1 Outil
+### 5.1 Vue d'ensemble
 
-**GitHub Actions** — pipelines automatiques déclenchés par les événements Git. ✅ CONFIGURÉ
+| Workflow | Fichier | Déclencheur | Rôle |
+|----------|---------|-------------|------|
+| CI | `ci.yml` | PR vers `dev`, `staging`, `main` | Build + tests complets + notification échec |
+| Docker Build | `docker-build.yml` | PR vers `staging`, `main` | Vérification image Docker backend |
+| Deploy Production | `deploy-main.yml` | Merge PR vers `main` | Déploiement Clever Cloud (3 apps) |
+| Release | `release.yml` | Push sur `main`, `staging`, `dev` | Tag Git + GitHub Release |
+| Dependabot | `dependabot.yml` | Tous les lundis | Mises a jour dépendances npm + actions |
 
-### 5.2 Pipeline CI — Tests et vérifications automatiques ✅ IMPLÉMENTÉ
+### 5.2 Pipeline CI — Détail
 
-**Fichier :** `.github/workflows/ci.yml`
-**Déclencheur :** Push (toutes branches) + Pull Request vers `main`
+**Déclencheur :** Pull Request vers `dev`, `staging` ou `main`
 
-Six jobs s'exécutent avec dépendances entre eux :
+| Job | Dépendances | Description |
+|-----|-------------|-------------|
+| Build Backend | — | `npm ci` backend |
+| Build Frontend (pipou-ressource) | — | `npm ci` + `npm run build` |
+| Build Backoffice | — | `npm ci` + `npm run build` |
+| Tests unitaires Backend | Build Backend | Jest + rapport JUnit |
+| Tests unitaires Frontend | Build Frontend | Vitest + rapport JUnit |
+| Tests unitaires Backoffice | Build Backoffice | Vitest + rapport JUnit |
+| Tests d'intégration | Build Backend | Jest + PostgreSQL + MinIO réels |
+| Tests de performance | Build Backend | k6 smoke test + PostgreSQL + MinIO |
+| Notification échec | Tous les jobs | Crée une issue GitHub si un job échoue |
 
-**Job 1 — Build backend**
+Si un job échoue : PR bloquée + issue GitHub créée automatiquement avec le label `bug`.
 
-| Étape | Description |
-|-------|-------------|
-| 1 | Checkout du code |
-| 2 | Installation Node.js 20 + dépendances (`npm ci`) |
+### 5.3 Pipeline Docker Build
 
-**Job 2 — Build frontend (pipou-ressource)**
+**Déclencheur :** PR vers `staging` ou `main`
 
-| Étape | Description |
-|-------|-------------|
-| 1 | Checkout du code |
-| 2 | Installation Node.js 20 + dépendances |
-| 3 | Compilation Vite (`npm run build`) |
+Construit l'image Docker du backend (`backend/Dockerfile`) sans la pousser vers un registry. Vérifie que le Dockerfile est valide avant chaque déploiement potentiel.
 
-**Job 3 — Build backoffice**
-
-Identique au job 2, appliqué au backoffice.
-
-**Job 4 — Tests unitaires backend (Jest)** *(dépend du Job 1)*
-
-| Étape | Description |
-|-------|-------------|
-| 1 | Installation + `npm run test:ci` |
-| 2 | Rapport JUnit via dorny/test-reporter |
-
-**Job 5 — Tests unitaires frontend** *(dépend des Jobs 2 & 3)*
-
-Tests Vitest sur pipou-ressource et backoffice avec rapport JUnit.
-
-**Job 6 — Tests d'intégration backend** *(dépend du Job 1)*
-
-| Service | Configuration |
-|---------|---------------|
-| PostgreSQL 16 | Base de données de test (`pipou_db`) |
-| MinIO | Stockage S3 de test (bucket `pipou-resources`) |
-
-**Job 7 — Tests de performance k6 (smoke)** *(dépend du Job 1)*
-
-Smoke test k6 avec backend démarré, PostgreSQL et MinIO réels.
-
-Si un job échoue, la Pull Request est bloquée et ne peut pas être mergée.
-
-> 🔜 **À améliorer :** le CI se déclenche actuellement sur tous les push, pas uniquement sur les PR vers `dev`, `staging` et `main`. À restreindre pour économiser les minutes GitHub Actions.
-
-> 🔜 **À améliorer :** ajouter `npm audit --audit-level=high` dans chaque job de build pour détecter les vulnérabilités des dépendances.
-
-### 5.3 Pipeline CI Staging ✅ / 🔜 À ÉTENDRE
-
-Le staging n'a pas de pipeline de déploiement — il réutilise le CI existant (`ci.yml`).
-
-> 🔜 **À améliorer :** le CI doit se déclencher sur les PR vers `staging` (actuellement uniquement `main`). Un seul paramètre à modifier dans `ci.yml`.
-
-### 5.4 Pipeline CD Production 🔜 À IMPLÉMENTER
+### 5.4 Pipeline CD Production
 
 **Fichier :** `.github/workflows/deploy-main.yml`
-**Déclencheur :** Push sur `main` (= merge de PR staging → main)
+**Déclencheur :** Merge d'une PR vers `main`
 
-Identique au pipeline staging. S'exécute uniquement si le CI est valide.
+Les 3 apps se déploient en parallèle :
+
+| Job | Commande |
+|-----|----------|
+| Deploy API | `clever deploy --alias PipouJS-API --force` |
+| Deploy Frontend | `clever deploy --alias PipouJS-Front --force` |
+| Deploy Backoffice | `clever deploy --alias PipouJS-Backoffice --force` |
+
+**Secrets GitHub requis :**
+
+| Secret | Description |
+|--------|-------------|
+| `CLEVER_TOKEN` | Token d'authentification Clever Cloud |
+| `CLEVER_SECRET` | Secret Clever Cloud |
+
+### 5.5 Mises a jour automatiques des dépendances (Dependabot)
+
+**Fichier :** `.github/dependabot.yml`
+**Déclencheur :** Tous les lundis a 9h (Europe/Paris)
+
+Ouvre des PR groupées vers `dev` pour chaque écosystème :
+
+| Écosystème | Répertoire |
+|------------|-----------|
+| npm | `/` (racine) |
+| npm | `/backend` |
+| npm | `/frontend/pipou-ressource` |
+| npm | `/frontend/backoffice` |
+| npm | `/e2e` |
+| github-actions | `/` |
 
 ---
 
 ## 6. Prérequis techniques
 
-### 6.1 Machine développeur ✅
+### 6.1 Machine développeur
 
 - Node.js 20+
 - npm 11+
 - Git
 - Docker + Docker Compose v2
 
-### 6.2 Clever Cloud (production uniquement) ✅ CONFIGURÉ
+### 6.2 Clever Cloud (production)
 
-- 3 apps créées et liées au dépôt GitHub
-- Add-ons PostgreSQL et Cellar S3 liés à l'API
+- 3 apps créées (`PipouJS-API`, `PipouJS-Front`, `PipouJS-Backoffice`)
+- Add-ons PostgreSQL et Cellar S3 liés a l'API
 - Variables d'environnement configurées (voir [deploiement_clever_cloud.md](deploiement_clever_cloud.md))
+- Secrets GitHub `CLEVER_TOKEN` et `CLEVER_SECRET` configurés
 
 ---
 
 ## 7. Étapes de déploiement
 
-### 7.1 Environnement de développement ✅
+### 7.1 Environnement de développement
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/<org>/PipouJS.git
+git clone https://github.com/PipouTeam/PipouJS.git
 cd PipouJS
 git checkout dev
 
@@ -317,42 +297,47 @@ git checkout dev
 cp backend/.env.example backend/.env
 cp frontend/pipou-ressource/.env.example frontend/pipou-ressource/.env
 cp frontend/backoffice/.env.example frontend/backoffice/.env
-# Éditer les .env avec les valeurs locales
 
-# 3. Démarrer tous les services (backend + BDD + S3 + frontends)
+# 3. Démarrer tous les services
 npm run dev
 
-# Ou uniquement les frontends (si backend Clever Cloud utilisé)
+# Ou uniquement les frontends (backend Clever Cloud)
 npm run dev:front
 ```
-
-**Services disponibles :**
 
 | Service | URL |
 |---------|-----|
 | Frontend | `http://localhost:3000` |
 | Backend API | `http://localhost:3001` |
 | Backoffice | `http://localhost:3002` |
+| Swagger | `http://localhost:3001/api-docs` |
 | MinIO console | `http://localhost:9002` |
 
-### 7.2 Déploiement manuel vers Clever Cloud ✅ (en attendant le CD automatique)
+### 7.2 Déploiement production (automatique)
+
+Le déploiement est entièrement automatisé :
+
+```
+PR feature/* -> dev  ->  PR dev -> staging  ->  PR staging -> main  ->  Deploy Clever Cloud
+      CI valide               CI + Docker valide              CD automatique
+```
+
+Aucune action manuelle requise en dehors de l'ouverture et du merge des PRs.
+
+### 7.3 Déploiement manuel (fallback)
+
+En cas de besoin de déploiement hors CI/CD :
 
 ```bash
-# Prérequis : Clever Tools installé et connecté
 npm install -g clever-tools
 clever login
 
-# Déployer l'API
 clever deploy --alias PipouJS-API
-
-# Déployer le frontend
 clever deploy --alias PipouJS-Front
-
-# Déployer le backoffice
 clever deploy --alias PipouJS-Backoffice
 ```
 
-### 7.3 Vérification post-déploiement ✅ / 🔜 À AUTOMATISER
+### 7.4 Vérification post-déploiement
 
 | Vérification | Endpoint | Résultat attendu |
 |---|---|---|
@@ -361,9 +346,7 @@ clever deploy --alias PipouJS-Backoffice
 | Frontend | `/` | Page d'accueil |
 | Backoffice | `/` | Page de connexion admin |
 
-> 🔜 **À automatiser :** ajouter une étape de health check dans les workflows de déploiement CD.
-
-### 7.4 Initialisation / réinitialisation de la base de données ✅
+### 7.5 Initialisation de la base de données
 
 ```bash
 # Récupérer l'URI de connexion
@@ -372,122 +355,97 @@ clever env --alias PipouJS-API | grep POSTGRESQL_ADDON_URI
 # Appliquer le schéma
 psql "<URI>" -f database/schema.sql
 
-# (Optionnel) Appliquer les données de démo
+# (Optionnel) Données de démo
 psql "<URI>" -f database/seed.sql
 ```
 
-### 7.5 Procédure de rollback 🔜 À DOCUMENTER AVEC L'URL CLEVER CLOUD
+### 7.6 Procédure de rollback
 
-En cas de problème après un déploiement :
+**Option 1 — Via la console Clever Cloud (recommandé)**
 
-```bash
-# Option 1 : Revenir au déploiement précédent via Clever Cloud console
-# Dashboard → App → Déploiements → choisir le déploiement stable → "Redéployer"
-
-# Option 2 : Forcer un redéploiement depuis un commit Git stable
-git log --oneline -10
-git checkout <sha_du_commit_stable>
-clever deploy --alias PipouJS-API
-clever deploy --alias PipouJS-Front
-clever deploy --alias PipouJS-Backoffice
+```
+Console Clever Cloud -> App -> Déploiements -> choisir un déploiement stable -> Redéployer
 ```
 
-> ⚠️ En production, ne jamais réinitialiser la base de données sans sauvegarde préalable.
+**Option 2 — Via Git**
+
+```bash
+git log --oneline -10
+# Identifier le commit stable
+
+git checkout <sha_du_commit_stable>
+clever deploy --alias PipouJS-API --force
+clever deploy --alias PipouJS-Front --force
+clever deploy --alias PipouJS-Backoffice --force
+```
+
+> Attention : ne jamais réinitialiser la base de données sans sauvegarde préalable.
 
 ---
 
-## 8. Gestion des secrets et sécurité des variables ✅ PRATIQUE EN PLACE
+## 8. Gestion des secrets
 
 | Variable | Sensible | Règle |
 |----------|----------|-------|
-| `SECRET` (JWT) | Oui | Jamais dans Git, min 32 caractères aléatoires |
+| `SECRET` (JWT) | Oui | Jamais dans Git, min 32 caractères |
 | `S3_ACCESS_KEY` | Oui | Jamais dans Git |
 | `S3_SECRET_KEY` | Oui | Jamais dans Git |
 | `POSTGRESQL_ADDON_URI` | Oui | Injectée automatiquement par Clever Cloud |
+| `CLEVER_TOKEN` | Oui | GitHub Secret uniquement |
+| `CLEVER_SECRET` | Oui | GitHub Secret uniquement |
 | `PORT` | Non | `8080` en production (imposé Clever Cloud) |
-| `NODE_ENV` | Non | `production` obligatoire en prod |
 | `VITE_API_URL` | Non | URL publique de l'API en prod |
 
-Le fichier `.env` est listé dans `.gitignore`. Seul `.env.example` est versionné, sans valeurs réelles.
+Le fichier `.env` est dans `.gitignore`. Seul `.env.example` est versionné, sans valeurs réelles.
 
 ---
 
 ## 9. Ressources techniques — Clever Cloud
 
-| Service | Plan actuel | Notes |
-|---------|-------------|-------|
+| Service | Plan | Notes |
+|---------|------|-------|
 | Node.js API | Nano | Peut être upgradé selon charge |
 | Static (frontend) | Nano | Servi via CDN Clever Cloud |
 | Static (backoffice) | Nano | Servi via CDN Clever Cloud |
-| PostgreSQL | dev | À upgrader en `xs_ssd` pour prod réelle |
+| PostgreSQL | dev | A upgrader pour production réelle |
 | Cellar S3 | S | Stockage objet, pay-as-you-go |
 
-HTTPS est géré automatiquement par Clever Cloud (certificats Let's Encrypt).
+HTTPS géré automatiquement par Clever Cloud (Let's Encrypt).
 
 ---
 
-## 10. Monitoring et supervision 🔜 À IMPLÉMENTER
+## 10. Gestion des incidents
 
-Aucun monitoring de disponibilité n'est actuellement en place.
-
-**Option recommandée :** [Uptime Kuma](https://github.com/louislam/uptime-kuma) (open source, auto-hébergé) ou le monitoring natif Clever Cloud.
-
-Monitors à configurer :
-- HTTP → URL API (`/api/stats`)
-- HTTP → URL frontend
-- HTTP → URL backoffice
-- Alertes par email en cas d'indisponibilité
-
-> 🔜 **À implémenter :** déployer un service de monitoring et configurer les alertes.
-
----
-
-## 11. Gestion des évolutions et des incidents 🔜 À IMPLÉMENTER
-
-### 11.1 Templates GitHub 🔜
-
-Aucun template n'est actuellement configuré.
-
-**Fichiers à créer :**
-- `.github/ISSUE_TEMPLATE/bug_report.md`
-- `.github/ISSUE_TEMPLATE/feature_request.md`
-- `.github/PULL_REQUEST_TEMPLATE.md`
-- `CONTRIBUTING.md`
-
-### 11.2 Procédure d'incident 🔜
-
-**En cas d'incident en production :**
+**Procédure en cas d'incident en production :**
 
 1. Identifier le service impacté (API, frontend, backoffice, BDD, S3)
-2. Consulter les logs Clever Cloud : `clever logs --alias PipouJS-API`
-3. Si le problème vient d'un déploiement récent → rollback (voir section 7.5)
-4. Créer une issue GitHub avec le label `bug` et les logs
-5. Déployer le fix sur `dev` → PR vers `staging` (validation CI) → PR vers `main` (CD automatique Clever Cloud)
+2. Consulter les logs : `clever logs --alias PipouJS-API`
+3. Si lié a un déploiement récent : rollback (section 7.6)
+4. Le CI crée automatiquement une issue GitHub avec le label `bug` et un lien vers les logs
+5. Corriger sur `dev` -> PR `staging` (CI) -> PR `main` (CD automatique)
 
 ---
 
-## 12. Récapitulatif — Ce qui est implémenté vs à faire
+## 11. Récapitulatif
 
-### ✅ Implémenté
+### Implémenté
 
-- Infrastructure Clever Cloud (3 apps + add-ons PostgreSQL + Cellar S3)
-- Docker Compose pour développement local (profils `full-local` et `front-only`)
-- CI GitHub Actions complet (build, tests unitaires, intégration, performance k6)
-- Variables d'environnement sécurisées (`.env.example`, `.gitignore`)
-- 3 branches Git créées (`main`, `staging`, `dev`)
-- Documentation d'installation et de déploiement Clever Cloud
-- Déploiement manuel via `clever deploy`
+| Élément | Détail |
+|---------|--------|
+| Infrastructure Clever Cloud | 3 apps + PostgreSQL + Cellar S3 |
+| Environnement local | Docker Compose (`full-local`, `front-only`) |
+| CI complet | Build + tests unitaires + intégration + perf k6 + Docker build |
+| CD automatique | `deploy-main.yml` -> Clever Cloud au merge sur `main` |
+| Versioning automatique | semantic-release (alpha / beta / stable) |
+| Protection des branches | `main`, `staging`, `dev` protégées avec PR obligatoire |
+| Mises a jour dépendances | Dependabot hebdomadaire vers `dev` |
+| Notification d'échec CI | Issue GitHub automatique avec label `bug` |
+| Documentation | README, plan déploiement, guide installation, Clever Cloud |
 
-### 🔜 À implémenter (par ordre de priorité)
+### A implémenter
 
-| Priorité | Tâche | Fichier(s) à créer / modifier |
-|----------|-------|-------------------------------|
-| 1 | CD automatique production (Clever Cloud) | `.github/workflows/deploy-main.yml` |
-| 2 | CI déclenché sur PR vers `staging` | Modifier `.github/workflows/ci.yml` |
-| 3 | Versioning automatique (semantic-release) | `.github/workflows/release.yml` + config `semantic-release` |
-| 4 | Protection des branches GitHub | Paramètres GitHub (UI, pas de fichier) |
-| 5 | Templates issues et PR | `.github/ISSUE_TEMPLATE/bug_report.md`, `PULL_REQUEST_TEMPLATE.md` |
-| 6 | `CONTRIBUTING.md` | `CONTRIBUTING.md` |
-| 7 | Health check post-déploiement | Dans `deploy-main.yml` |
-| 8 | Monitoring (Uptime Kuma ou Clever Cloud) | Service externe |
-| 9 | Audit sécurité dépendances dans CI | Modifier `ci.yml` (`npm audit`) |
+| Priorité | Tâche | Fichier |
+|----------|-------|---------|
+| 1 | Templates issues et PR GitHub | `.github/ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE.md` |
+| 2 | Plan de sécurité | `docs/plan_securite.md` |
+| 3 | Audit sécurité dépendances dans CI | Ajouter `npm audit` dans `ci.yml` |
