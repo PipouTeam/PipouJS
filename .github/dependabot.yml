@@ -1,0 +1,79 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    target-branch: dev
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    target-branch: dev
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend/pipou-ressource
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    target-branch: dev
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend/backoffice
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    target-branch: dev
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    target-branch: dev
+    groups:
+      dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    target-branch: dev
+    groups:
+      actions:
+        patterns: ["*"]
