@@ -56,10 +56,12 @@ Ces trois services communiquent avec une base de données **PostgreSQL 16** et u
 | Environnement | Infrastructure | Branche Git | Déploiement |
 |---------------|----------------|-------------|-------------|
 | Développement | Local (Docker Compose) | `dev` | `npm run dev` |
-| Staging | Clever Cloud (replica prod) | `staging` | CD automatique (GitHub Actions -> Clever Cloud) |
-| Production | Clever Cloud | `main` | CD automatique (GitHub Actions -> Clever Cloud) |
+| Staging | Clever Cloud (replica prod) | `staging` | Déploiement **manuel** (GitHub Actions → Clever Cloud) |
+| Production | Clever Cloud | `main` | Déploiement **manuel + gardé** (staging requis au préalable) |
 
-Le staging est un **replica prod-like sur Clever Cloud**, déployé automatiquement à chaque merge vers `staging`. Il sert de dernière validation sur l'infra réelle (build Clever, Cellar S3, addon PostgreSQL, injection des variables) avant le merge vers `main`. La CI (build + tests) reste la première barrière sur les PR.
+Le staging est un **replica prod-like sur Clever Cloud**, déployé **manuellement** via l'onglet Actions (workflow `deploy-staging.yml`). Il sert de dernière validation sur l'infra réelle (build Clever, Cellar S3, addon PostgreSQL, injection des variables) avant la production. La CI (build + tests) reste la première barrière sur les PR.
+
+La **production** se déploie elle aussi manuellement, mais le workflow **refuse de partir tant qu'aucun déploiement staging n'a eu lieu** (voir la garde §5.5).
 
 ### 2.3 Apps Clever Cloud
 
@@ -117,14 +119,14 @@ Toute nouvelle fonctionnalité est développée sur une branche dédiée (`featu
 |-----------|--------|
 | Objectif | Validation sur infra réelle avant merge vers `main` |
 | Infrastructure | Clever Cloud (replica prod, plans minimaux) |
-| Déploiement | Automatique via `deploy-staging.yml` à chaque merge de PR vers `staging` |
+| Déploiement | **Manuel** via `deploy-staging.yml` (onglet Actions → Run workflow) |
 | Base de données | Addon PostgreSQL Clever dédié (données de seed) |
 | Stockage | Cellar S3 Clever dédié |
-| Déclencheur CD | Merge d'une PR vers `staging` |
+| Déclencheur CD | `workflow_dispatch` (manuel) |
 
 Deux barrières successives :
 1. **CI sur les PR** (build, tests unitaires, intégration, perf k6, build Docker) — empêche un merge cassé.
-2. **Déploiement staging Clever** après merge — valide ce que la CI ne peut pas tester : build Clever, Cellar S3, addon PostgreSQL managé, injection des variables d'environnement, URLs/CORS réels, HTTPS.
+2. **Déploiement staging Clever** (déclenché à la main) — valide ce que la CI ne peut pas tester : build Clever, Cellar S3, addon PostgreSQL managé, injection des variables d'environnement, URLs/CORS réels, HTTPS. Un staging réussi pose le tag `staging-deployed`, prérequis du déploiement prod.
 
 > ⚠️ Ne jamais brancher de données réelles sur le staging — uniquement des données de seed.
 
@@ -134,7 +136,7 @@ Deux barrières successives :
 |-----------|--------|
 | Objectif | Service aux utilisateurs finaux |
 | Infrastructure | Clever Cloud |
-| Déploiement | Automatique via GitHub Actions a chaque merge vers `main` |
+| Déploiement | **Manuel et gardé** via `deploy-main.yml` (staging requis au préalable) |
 | Base de données | PostgreSQL Clever Cloud (données réelles) |
 | Stockage | Cellar S3 Clever Cloud |
 | HTTPS | Géré automatiquement par Clever Cloud (Let's Encrypt) |
@@ -208,8 +210,8 @@ Si aucun commit ne justifie une nouvelle version (`chore:`, `docs:`), semantic-r
 |----------|---------|-------------|------|
 | CI | `ci.yml` | PR vers `dev`, `staging`, `main` | Build + tests complets + notification échec |
 | Docker Build | `docker-build.yml` | PR vers `staging`, `main` | Vérification image Docker backend |
-| Deploy Staging | `deploy-staging.yml` | Merge PR vers `staging` | Déploiement Clever Cloud staging (3 apps) |
-| Deploy Production | `deploy-main.yml` | Merge PR vers `main` | Déploiement Clever Cloud prod (3 apps) |
+| Deploy Staging | `deploy-staging.yml` | Manuel (`workflow_dispatch`) | Déploie les 3 apps staging + pose le tag `staging-deployed` |
+| Deploy Production | `deploy-main.yml` | Manuel (`workflow_dispatch`) | Garde (staging requis) puis déploie les 3 apps prod |
 | Release | `release.yml` | Push sur `main`, `staging`, `dev` | Tag Git + GitHub Release |
 | Dependabot | `dependabot.yml` | Tous les lundis | Mises a jour dépendances npm + actions |
 
@@ -240,7 +242,7 @@ Construit l'image Docker du backend (`backend/Dockerfile`) sans la pousser vers 
 ### 5.4 Pipeline CD Staging
 
 **Fichier :** `.github/workflows/deploy-staging.yml`
-**Déclencheur :** Merge d'une PR vers `staging` (`pull_request: [closed]` + `if: merged == true`)
+**Déclencheur :** **Manuel** (`workflow_dispatch`, onglet Actions → Run workflow)
 
 Symétrique de la prod, vers les apps staging :
 
@@ -249,18 +251,24 @@ Symétrique de la prod, vers les apps staging :
 | Deploy API | `clever deploy --alias PipouJS-API-staging --force` |
 | Deploy Frontend | `clever deploy --alias PipouJS-Front-staging --force` |
 | Deploy Backoffice | `clever deploy --alias PipouJS-Backoffice-staging --force` |
+| `mark-staging-deployed` | pose le tag mobile `staging-deployed` sur le commit déployé (après succès des 3) |
 
-Mêmes secrets `CLEVER_TOKEN` / `CLEVER_SECRET`. Nécessite que les 3 apps staging existent et soient référencées dans `.clever.json` (voir §2.3).
+Mêmes secrets `CLEVER_TOKEN` / `CLEVER_SECRET`. Nécessite que les 3 apps staging existent et soient référencées dans `.clever.json` (voir §2.3). Le job de marquage requiert `permissions: contents: write` (pour pousser le tag).
 
 ### 5.5 Pipeline CD Production
 
 **Fichier :** `.github/workflows/deploy-main.yml`
-**Déclencheur :** Merge d'une PR vers `main`
+**Déclencheur :** **Manuel** (`workflow_dispatch`)
 
-Les 3 apps se déploient en parallèle :
+Un job **`gate`** s'exécute en premier et **bloque le déploiement** si :
+- le tag `staging-deployed` n'existe pas (⇒ aucun staging déployé), ou
+- le commit pointé par `staging-deployed` n'est **pas un ancêtre** du commit de prod courant (⇒ le code à mettre en prod n'a pas transité par le staging).
+
+Ce n'est qu'une fois la garde franchie que les 3 jobs de déploiement (`needs: gate`) s'exécutent :
 
 | Job | Commande |
 |-----|----------|
+| gate | vérifie le tag `staging-deployed` + relation d'ancêtre |
 | Deploy API | `clever deploy --alias PipouJS-API --force` |
 | Deploy Frontend | `clever deploy --alias PipouJS-Front --force` |
 | Deploy Backoffice | `clever deploy --alias PipouJS-Backoffice --force` |
@@ -338,16 +346,19 @@ npm run dev:front
 | Swagger | `http://localhost:3001/api-docs` |
 | MinIO console | `http://localhost:9002` |
 
-### 7.2 Déploiement production (automatique)
+### 7.2 Déploiement (manuel, gardé)
 
-Le déploiement est entièrement automatisé :
+Le flux de validation reste par PR, mais les **déploiements sont déclenchés à la main** depuis l'onglet Actions :
 
 ```
-PR feature/* -> dev  ->  PR dev -> staging  ->  PR staging -> main  ->  Deploy Clever Cloud
-      CI valide               CI + Docker valide              CD automatique
+PR feature/* -> dev  ->  PR dev -> staging  ->  PR staging -> main
+      CI valide               CI + Docker valide
+
+Actions → "Deploy — Staging (manuel)"      → déploie staging + tag staging-deployed
+Actions → "Deploy — Production (manuel)"   → garde (staging requis) puis déploie la prod
 ```
 
-Aucune action manuelle requise en dehors de l'ouverture et du merge des PRs.
+L'ordre est imposé par la garde : **impossible de déployer la prod sans avoir déployé le staging au préalable** (sur un commit inclus dans celui de prod).
 
 ### 7.3 Déploiement manuel (fallback)
 
@@ -447,7 +458,7 @@ HTTPS géré automatiquement par Clever Cloud (Let's Encrypt).
 2. Consulter les logs : `clever logs --alias PipouJS-API`
 3. Si lié a un déploiement récent : rollback (section 7.6)
 4. Le CI crée automatiquement une issue GitHub avec le label `bug` et un lien vers les logs
-5. Corriger sur `dev` -> PR `staging` (CI) -> PR `main` (CD automatique)
+5. Corriger sur `dev` -> PR `staging` (CI) -> déploiement staging manuel -> PR `main` -> déploiement prod manuel (gardé)
 
 ---
 
@@ -460,7 +471,8 @@ HTTPS géré automatiquement par Clever Cloud (Let's Encrypt).
 | Infrastructure Clever Cloud | 3 apps + PostgreSQL + Cellar S3 |
 | Environnement local | Docker Compose (`full-local`, `front-only`) |
 | CI complet | Build + tests unitaires + intégration + perf k6 + Docker build |
-| CD automatique | `deploy-main.yml` -> Clever Cloud au merge sur `main` |
+| CD manuel staging | `deploy-staging.yml` (`workflow_dispatch`) -> 3 apps staging + tag `staging-deployed` |
+| CD manuel prod gardé | `deploy-main.yml` (`workflow_dispatch`) -> garde (staging requis) puis 3 apps prod |
 | Versioning automatique | semantic-release (alpha / beta / stable) |
 | Protection des branches | `main`, `staging`, `dev` protégées avec PR obligatoire |
 | Mises a jour dépendances | Dependabot hebdomadaire vers `dev` |
@@ -471,6 +483,7 @@ HTTPS géré automatiquement par Clever Cloud (Let's Encrypt).
 
 | Priorité | Tâche | Fichier |
 |----------|-------|---------|
+| 0 🔴 | **Secrets `CLEVER_TOKEN` / `CLEVER_SECRET`** à ajouter dans GitHub — sans eux, tout déploiement via Actions échoue | Settings → Secrets → Actions |
 | 1 | Templates issues et PR GitHub | `.github/ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE.md` |
 | 2 | Plan de sécurité | `docs/plan_securite.md` |
 | 3 | Audit sécurité dépendances dans CI | Ajouter `npm audit` dans `ci.yml` |

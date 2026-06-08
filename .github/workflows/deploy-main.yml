@@ -1,26 +1,48 @@
-name: Deploy — Production
+name: Deploy — Production (manuel)
 
+# Déclenchement 100 % manuel depuis l'onglet Actions (Run workflow).
+# Le job `gate` refuse le déploiement si aucun staging n'a été déployé
+# (tag `staging-deployed` absent) ou si le commit déployé en staging
+# n'est pas inclus dans le commit de production courant.
 on:
-  pull_request:
-    branches: [main]
-    types: [closed]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  deploy-api:
-    name: Deploy API → Clever Cloud
+  gate:
+    name: Garde — un déploiement staging est requis
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Vérifier le tag staging-deployed
+        run: |
+          if ! git fetch origin 'refs/tags/staging-deployed:refs/tags/staging-deployed' 2>/dev/null; then
+            echo "::error::Aucun déploiement staging enregistré (tag 'staging-deployed' absent). Déploie d'abord le staging."
+            exit 1
+          fi
+          staged="$(git rev-parse staging-deployed)"
+          echo "Dernier commit déployé en staging : $staged"
+          if ! git merge-base --is-ancestor "$staged" HEAD; then
+            echo "::error::Le commit déployé en staging ($staged) n'est pas inclus dans ce commit de production. Promeus-le via staging → main avant de déployer en prod."
+            exit 1
+          fi
+          echo "✓ Garde franchie : le code à déployer en prod a bien été validé en staging."
 
+  deploy-api:
+    name: Deploy API → Clever Cloud
+    runs-on: ubuntu-latest
+    needs: gate
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
@@ -30,15 +52,14 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend → Clever Cloud
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    needs: gate
+    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
@@ -48,15 +69,14 @@ jobs:
   deploy-backoffice:
     name: Deploy Backoffice → Clever Cloud
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    needs: gate
+    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
