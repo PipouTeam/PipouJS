@@ -194,16 +194,17 @@ jobs:
       - run: npm ci --ignore-scripts
 
       - name: Configurer MinIO (créer le bucket)
+        env:
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL --retry 3 --retry-delay 5 https://github.com/minio/mc/releases/latest/download/mc.linux-amd64 -o /tmp/mc
-          chmod +x /tmp/mc
-          /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
-          /tmp/mc mb --ignore-existing local/pipou-resources
-          /tmp/mc anonymous set download local/pipou-resources
+          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-acl --bucket pipou-resources --acl public-read
 
       - name: Lancer les tests d'intégration
         env:
@@ -275,16 +276,17 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Configurer MinIO
+        env:
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL --retry 3 --retry-delay 5 https://github.com/minio/mc/releases/latest/download/mc.linux-amd64 -o /tmp/mc
-          chmod +x /tmp/mc
-          /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
-          /tmp/mc mb --ignore-existing local/pipou-resources
-          /tmp/mc anonymous set download local/pipou-resources
+          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-acl --bucket pipou-resources --acl public-read
 
       - name: Initialiser la base de données
         run: |
