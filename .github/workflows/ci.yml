@@ -204,7 +204,9 @@ jobs:
             sleep 2
           done
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
-          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-acl --bucket pipou-resources --acl public-read
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-policy \
+            --bucket pipou-resources \
+            --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::pipou-resources/*"]}]}'
 
       - name: Lancer les tests d'intégration
         env:
@@ -286,7 +288,9 @@ jobs:
             sleep 2
           done
           aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
-          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-acl --bucket pipou-resources --acl public-read
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-policy \
+            --bucket pipou-resources \
+            --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::pipou-resources/*"]}]}'
 
       - name: Initialiser la base de données
         run: |
