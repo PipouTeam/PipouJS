@@ -199,7 +199,7 @@ jobs:
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          curl -sL --retry 3 --retry-delay 5 https://github.com/minio/mc/releases/latest/download/mc.linux-amd64 -o /tmp/mc
           chmod +x /tmp/mc
           /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
           /tmp/mc mb --ignore-existing local/pipou-resources
@@ -280,7 +280,7 @@ jobs:
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          curl -sL --retry 3 --retry-delay 5 https://github.com/minio/mc/releases/latest/download/mc.linux-amd64 -o /tmp/mc
           chmod +x /tmp/mc
           /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
           /tmp/mc mb --ignore-existing local/pipou-resources
