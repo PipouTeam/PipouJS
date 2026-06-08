@@ -48,6 +48,7 @@ jobs:
   deploy-backoffice:
     name: Deploy Backoffice → Clever Cloud
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
         with:

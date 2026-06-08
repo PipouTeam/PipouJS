@@ -25,6 +25,8 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci --ignore-scripts
+      - name: Audit de sécurité
+        run: npm audit --audit-level=high
 
   build-frontend-app:
     name: Build Frontend (pipou-ressource)
@@ -40,6 +42,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/pipou-ressource/package-lock.json
       - run: npm ci --ignore-scripts
+      - name: Audit de sécurité
+        run: npm audit --audit-level=high
       - run: npm run build
 
   build-frontend-backoffice:
@@ -56,6 +60,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/backoffice/package-lock.json
       - run: npm ci --ignore-scripts
+      - name: Audit de sécurité
+        run: npm audit --audit-level=high
       - run: npm run build
 
   # ── Tests unitaires ──────────────────────────────────────────────
@@ -188,16 +194,19 @@ jobs:
       - run: npm ci --ignore-scripts
 
       - name: Configurer MinIO (créer le bucket)
+        env:
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
-          chmod +x /tmp/mc
-          /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
-          /tmp/mc mb --ignore-existing local/pipou-resources
-          /tmp/mc anonymous set download local/pipou-resources
+          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-policy \
+            --bucket pipou-resources \
+            --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::pipou-resources/*"]}]}'
 
       - name: Lancer les tests d'intégration
         env:
@@ -269,16 +278,19 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Configurer MinIO
+        env:
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:9000/minio/health/live && break
             sleep 2
           done
-          curl -sL https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
-          chmod +x /tmp/mc
-          /tmp/mc alias set local http://127.0.0.1:9000 minioadmin minioadmin
-          /tmp/mc mb --ignore-existing local/pipou-resources
-          /tmp/mc anonymous set download local/pipou-resources
+          aws --endpoint-url http://127.0.0.1:9000 s3 mb s3://pipou-resources || true
+          aws --endpoint-url http://127.0.0.1:9000 s3api put-bucket-policy \
+            --bucket pipou-resources \
+            --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::pipou-resources/*"]}]}'
 
       - name: Initialiser la base de données
         run: |
