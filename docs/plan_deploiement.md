@@ -56,25 +56,29 @@ Ces trois services communiquent avec une base de données **PostgreSQL 16** et u
 | Environnement | Infrastructure | Branche Git | Déploiement |
 |---------------|----------------|-------------|-------------|
 | Développement | Local (Docker Compose) | `dev` | `npm run dev` |
-| Staging | CI GitHub Actions uniquement | `staging` | CI automatique (pas de cloud) |
+| Staging | Clever Cloud (replica prod) | `staging` | CD automatique (GitHub Actions -> Clever Cloud) |
 | Production | Clever Cloud | `main` | CD automatique (GitHub Actions -> Clever Cloud) |
 
-Le staging ne déploie **pas** sur un serveur distant — il sert de barrière CI (build + tests complets) avant d'autoriser le merge vers `main`. Cela évite de doubler les coûts d'hébergement.
+Le staging est un **replica prod-like sur Clever Cloud**, déployé automatiquement à chaque merge vers `staging`. Il sert de dernière validation sur l'infra réelle (build Clever, Cellar S3, addon PostgreSQL, injection des variables) avant le merge vers `main`. La CI (build + tests) reste la première barrière sur les PR.
 
-### 2.3 Apps Clever Cloud (production uniquement)
+### 2.3 Apps Clever Cloud
 
-| App | Type | Alias |
-|-----|------|-------|
-| **API** | Node.js | `PipouJS-API` |
-| **Frontend** | Static | `PipouJS-Front` |
-| **Backoffice** | Static | `PipouJS-Backoffice` |
+Deux jeux d'apps, un par environnement cloud :
 
-**Add-ons liés a l'API :**
+| App | Type | Alias prod | Alias staging |
+|-----|------|------------|---------------|
+| **API** | Node.js | `PipouJS-API` | `PipouJS-API-staging` |
+| **Frontend** | Static | `PipouJS-Front` | `PipouJS-Front-staging` |
+| **Backoffice** | Static | `PipouJS-Backoffice` | `PipouJS-Backoffice-staging` |
+
+**Add-ons liés a l'API (un jeu par environnement) :**
 
 | Add-on | Plan | Usage |
 |--------|------|-------|
 | PostgreSQL | dev | Base de données principale |
 | Cellar S3 | S | Stockage des fichiers uploadés |
+
+> 🔜 **Prérequis staging à créer côté Clever Cloud :** 3 apps (`PipouJS-API-staging`, `PipouJS-Front-staging`, `PipouJS-Backoffice-staging`) + leurs add-ons PostgreSQL et Cellar dédiés, avec les mêmes variables d'environnement que la prod (voir [deploiement_clever_cloud.md](deploiement_clever_cloud.md)). Les 3 alias staging doivent ensuite être ajoutés à `.clever.json` pour que le workflow `deploy-staging.yml` puisse les cibler. Plans minimaux recommandés (Nano / Postgres dev / Cellar S) ; apps arrêtées hors période de test pour limiter les coûts.
 
 ### 2.4 Environnement local (Docker Compose)
 
@@ -111,13 +115,18 @@ Toute nouvelle fonctionnalité est développée sur une branche dédiée (`featu
 
 | Paramètre | Valeur |
 |-----------|--------|
-| Objectif | Validation complète avant merge vers `main` |
-| Infrastructure | GitHub Actions uniquement — pas de déploiement cloud |
-| Base de données | PostgreSQL éphémère (GitHub Actions services) |
-| Stockage | MinIO éphémère (GitHub Actions services) |
-| Déclencheur | PR vers `staging` |
+| Objectif | Validation sur infra réelle avant merge vers `main` |
+| Infrastructure | Clever Cloud (replica prod, plans minimaux) |
+| Déploiement | Automatique via `deploy-staging.yml` à chaque merge de PR vers `staging` |
+| Base de données | Addon PostgreSQL Clever dédié (données de seed) |
+| Stockage | Cellar S3 Clever dédié |
+| Déclencheur CD | Merge d'une PR vers `staging` |
 
-Le staging est une **barrière CI**. La validation couvre : build, tests unitaires, tests d'intégration, tests de performance k6 et build Docker.
+Deux barrières successives :
+1. **CI sur les PR** (build, tests unitaires, intégration, perf k6, build Docker) — empêche un merge cassé.
+2. **Déploiement staging Clever** après merge — valide ce que la CI ne peut pas tester : build Clever, Cellar S3, addon PostgreSQL managé, injection des variables d'environnement, URLs/CORS réels, HTTPS.
+
+> ⚠️ Ne jamais brancher de données réelles sur le staging — uniquement des données de seed.
 
 ### 3.3 Environnement de production (branche `main`)
 
@@ -199,7 +208,8 @@ Si aucun commit ne justifie une nouvelle version (`chore:`, `docs:`), semantic-r
 |----------|---------|-------------|------|
 | CI | `ci.yml` | PR vers `dev`, `staging`, `main` | Build + tests complets + notification échec |
 | Docker Build | `docker-build.yml` | PR vers `staging`, `main` | Vérification image Docker backend |
-| Deploy Production | `deploy-main.yml` | Merge PR vers `main` | Déploiement Clever Cloud (3 apps) |
+| Deploy Staging | `deploy-staging.yml` | Merge PR vers `staging` | Déploiement Clever Cloud staging (3 apps) |
+| Deploy Production | `deploy-main.yml` | Merge PR vers `main` | Déploiement Clever Cloud prod (3 apps) |
 | Release | `release.yml` | Push sur `main`, `staging`, `dev` | Tag Git + GitHub Release |
 | Dependabot | `dependabot.yml` | Tous les lundis | Mises a jour dépendances npm + actions |
 
@@ -227,7 +237,22 @@ Si un job échoue : PR bloquée + issue GitHub créée automatiquement avec le l
 
 Construit l'image Docker du backend (`backend/Dockerfile`) sans la pousser vers un registry. Vérifie que le Dockerfile est valide avant chaque déploiement potentiel.
 
-### 5.4 Pipeline CD Production
+### 5.4 Pipeline CD Staging
+
+**Fichier :** `.github/workflows/deploy-staging.yml`
+**Déclencheur :** Merge d'une PR vers `staging` (`pull_request: [closed]` + `if: merged == true`)
+
+Symétrique de la prod, vers les apps staging :
+
+| Job | Commande |
+|-----|----------|
+| Deploy API | `clever deploy --alias PipouJS-API-staging --force` |
+| Deploy Frontend | `clever deploy --alias PipouJS-Front-staging --force` |
+| Deploy Backoffice | `clever deploy --alias PipouJS-Backoffice-staging --force` |
+
+Mêmes secrets `CLEVER_TOKEN` / `CLEVER_SECRET`. Nécessite que les 3 apps staging existent et soient référencées dans `.clever.json` (voir §2.3).
+
+### 5.5 Pipeline CD Production
 
 **Fichier :** `.github/workflows/deploy-main.yml`
 **Déclencheur :** Merge d'une PR vers `main`
@@ -247,7 +272,7 @@ Les 3 apps se déploient en parallèle :
 | `CLEVER_TOKEN` | Token d'authentification Clever Cloud |
 | `CLEVER_SECRET` | Secret Clever Cloud |
 
-### 5.5 Mises a jour automatiques des dépendances (Dependabot)
+### 5.6 Mises a jour automatiques des dépendances (Dependabot)
 
 **Fichier :** `.github/dependabot.yml`
 **Déclencheur :** Tous les lundis a 9h (Europe/Paris)

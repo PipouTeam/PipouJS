@@ -1,0 +1,64 @@
+name: Deploy — Staging
+
+on:
+  pull_request:
+    branches: [staging]
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-api:
+    name: Deploy API → Clever Cloud (staging)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Clever Tools
+        run: npm install -g clever-tools
+
+      - name: Deploy
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+        run: clever deploy --alias PipouJS-API-staging --force
+
+  deploy-frontend:
+    name: Deploy Frontend → Clever Cloud (staging)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Clever Tools
+        run: npm install -g clever-tools
+
+      - name: Deploy
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+        run: clever deploy --alias PipouJS-Front-staging --force
+
+  deploy-backoffice:
+    name: Deploy Backoffice → Clever Cloud (staging)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Clever Tools
+        run: npm install -g clever-tools
+
+      - name: Deploy
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+        run: clever deploy --alias PipouJS-Backoffice-staging --force
