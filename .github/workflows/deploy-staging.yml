@@ -1,26 +1,26 @@
-name: Deploy — Staging
+name: Deploy — Staging (manuel)
 
+# Déclenchement 100 % manuel depuis l'onglet Actions (Run workflow).
+# Déploie les 3 apps staging sur Clever Cloud, puis pose le tag mobile
+# `staging-deployed` sur le commit déployé — ce tag sert de garde au
+# déploiement de production (voir deploy-main.yml).
 on:
-  pull_request:
-    branches: [staging]
-    types: [closed]
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # nécessaire pour pousser le tag staging-deployed
 
 jobs:
   deploy-api:
     name: Deploy API → Clever Cloud (staging)
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    environment: staging
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
@@ -30,15 +30,13 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend → Clever Cloud (staging)
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    environment: staging
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
@@ -48,17 +46,29 @@ jobs:
   deploy-backoffice:
     name: Deploy Backoffice → Clever Cloud (staging)
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    environment: staging
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Clever Tools
         run: npm install -g clever-tools
-
       - name: Deploy
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
           CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
         run: clever deploy --alias PipouJS-Backoffice-staging --force
+
+  mark-staging-deployed:
+    name: Marquer le commit comme déployé en staging
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-frontend, deploy-backoffice]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Poser le tag staging-deployed
+        run: |
+          git tag -f staging-deployed "${{ github.sha }}"
+          git push -f origin staging-deployed
+          echo "✓ Tag staging-deployed -> ${{ github.sha }}"
