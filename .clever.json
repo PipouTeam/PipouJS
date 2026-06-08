@@ -23,6 +23,30 @@
       "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_da5f981d-0c8f-4452-b97b-0fe976de51f8.git",
       "name": "[PipouJS] Backoffice",
       "alias": "PipouJS-Backoffice"
+    },
+    {
+      "app_id": "app_f0c2c11d-7d3c-4a07-9c4c-be5d7ded7e56",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_f0c2c11d-7d3c-4a07-9c4c-be5d7ded7e56.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_f0c2c11d-7d3c-4a07-9c4c-be5d7ded7e56.git",
+      "name": "[PipouJS] API staging",
+      "alias": "PipouJS-API-staging"
+    },
+    {
+      "app_id": "app_5348364e-901f-426f-973f-0125813ee198",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_5348364e-901f-426f-973f-0125813ee198.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_5348364e-901f-426f-973f-0125813ee198.git",
+      "name": "[PipouJS] Front staging",
+      "alias": "PipouJS-Front-staging"
+    },
+    {
+      "app_id": "app_d18dc07c-dfa4-4495-b031-6154fb63aedd",
+      "org_id": "user_fef9b663-1327-4ea5-99ba-33058123e8e0",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_d18dc07c-dfa4-4495-b031-6154fb63aedd.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_d18dc07c-dfa4-4495-b031-6154fb63aedd.git",
+      "name": "[PipouJS] Backoffice staging",
+      "alias": "PipouJS-Backoffice-staging"
     }
   ]
 }
