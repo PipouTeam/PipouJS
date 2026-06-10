@@ -7,7 +7,7 @@ Plateforme de partage de ressources pédagogiques développée par la **PipouTea
 
 ---
 
-c'est juste pour tester
+Petit test pour l'examen
 
 ## Architecture
 
