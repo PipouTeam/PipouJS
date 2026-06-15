@@ -18,8 +18,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -35,8 +35,8 @@ jobs:
       run:
         working-directory: frontend/pipou-ressource
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -53,8 +53,8 @@ jobs:
       run:
         working-directory: frontend/backoffice
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -73,8 +73,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -86,7 +86,7 @@ jobs:
           JEST_JUNIT_OUTPUT_NAME: junit.xml
       - name: Rapport de tests
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Résultats — Backend Unit
           path: backend/test-results/junit.xml
@@ -100,8 +100,8 @@ jobs:
       run:
         working-directory: frontend/pipou-ressource
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -112,7 +112,7 @@ jobs:
           CI: true
       - name: Rapport de tests
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Résultats — Frontend App
           path: frontend/pipou-ressource/test-results/junit.xml
@@ -126,8 +126,8 @@ jobs:
       run:
         working-directory: frontend/backoffice
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -138,7 +138,7 @@ jobs:
           CI: true
       - name: Rapport de tests
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Résultats — Frontend Backoffice
           path: frontend/backoffice/test-results/junit.xml
@@ -183,9 +183,9 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -228,7 +228,7 @@ jobs:
 
       - name: Rapport de tests
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Résultats — Backend Intégration
           path: backend/test-results/junit.xml
@@ -269,9 +269,9 @@ jobs:
           --health-retries 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -342,7 +342,7 @@ jobs:
       - test-performance
     if: failure()
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request
