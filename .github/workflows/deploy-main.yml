@@ -15,7 +15,7 @@ jobs:
     name: Garde — un déploiement staging est requis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Vérifier le tag staging-deployed
@@ -38,7 +38,7 @@ jobs:
     needs: gate
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install Clever Tools
@@ -55,7 +55,7 @@ jobs:
     needs: gate
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install Clever Tools
@@ -72,7 +72,7 @@ jobs:
     needs: gate
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install Clever Tools
