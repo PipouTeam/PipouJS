@@ -42,7 +42,7 @@
         "jsonwebtoken": "^9.0.3",
         "mandatoryenv": "^1.1.1",
         "module-alias": "^2.2.2",
-        "morgan": "^1.9.1",
+        "morgan": "^1.11.0",
         "multer": "^2.1.1",
         "pg": "^8.20.0",
         "rotating-file-stream": "^1.4.6",
